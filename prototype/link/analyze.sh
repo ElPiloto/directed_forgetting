@@ -17,6 +17,7 @@ source globals.sh   # load subject-wide settings, such as the subject's ID
 # indicated, below
 echo "== beginning analysis of $SUBJ at $(date) =="
 bash prep.sh
+bash register_all_image_groups.sh
 # run your high-level analysis scripts here
 echo "== finished analysis of $SUBJ at $(date) =="
 

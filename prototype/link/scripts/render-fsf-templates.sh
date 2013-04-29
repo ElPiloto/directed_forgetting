@@ -33,9 +33,19 @@ function render_firstlevel {
     | sed "s:<?= \$DATA_FILE_PREFIX ?>:$subject_dir/$data_file_prefix:g" \
     | sed "s:<?= \$INITIAL_HIGHRES_FILE ?>:$subject_dir/$initial_highres_file:g" \
     | sed "s:<?= \$HIGHRES_FILE ?>:$subject_dir/$highres_file:g" \
-    | sed "s:<?= \$EV1 ?>:$subject_dir/$ev_dir1:g" \
-    | sed "s:<?= \$EV2 ?>:$subject_dir/$ev_dir2:g" \
-    | sed "s:<?= \$EV_DIR ?>:$subject_dir/$ev_dir:g" 
 
 }
 
+
+img_names=("ALL_RUNS" "IMG_LOCALIZERS" "WORD_LOCALIZERS" "WORDLISTS")
+for img in ${img_names[@]}
+do
+	render_firstlevel $FSF_DIR/just_register.fsf.template \
+		$FIRSTLEVEL_DIR/$img.feat \
+		$FSL_DIR/data/standard/MNI152_T1_2mm_brain \
+		$NIFTI_DIR/${img}_mc \
+		$NIFTI_DIR/flash_brain \
+		$NIFTI_DIR/structural_brain \
+		> $FSF_DIR/$img.fsf
+	echo "Rendered images: ${img}"
+done

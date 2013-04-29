@@ -2,7 +2,7 @@
 # author: mgsimon@princeton.edu
 # this script sets up global variables for the analysis of the current subject
 
-set -e # stop immediately when an error occurs
+#set -e # stop immediately when an error occurs
 
 # add necessary directories to the system path
 export BXH_DIR=/jukebox/ntb/packages/bxh_xcede_tools/bin
@@ -33,3 +33,10 @@ LOCALIZER_DIR=analysis/firstlevel/localizer_hrf.feat
 ROI_DIR=results/roi
 ROI_KERNEL_TYPE=sphere
 ROI_KERNEL_SIZE=4
+
+# LRP Added
+MPRAGE_FILENAME_REGEX='^[0-9].*-1-1MPRAGEtfl.nii.gz'
+FLASH_FILENAME_REGEX='^[0-9].*-1-1flash75x75x3.nii.gz'
+WORDLIST_FILENAME_REGEX='^[0-9].*-1-1epilistblock1953x3x32s.nii.gz'
+IMAGE_LOCALIZER_FILENAME_REGEX='^[0-9].*-1-1epiimagelocalizer1953x3x32s.nii.gz'
+WORD_LOCALIZER_FILENAME_REGEX='^[0-9].*-1-1epiwordlocalizer1953x3x32s.nii.gz'
