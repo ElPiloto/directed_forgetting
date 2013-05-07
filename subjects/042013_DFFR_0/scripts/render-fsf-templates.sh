@@ -1,0 +1,1 @@
+../../../prototype/link/scripts/render-fsf-templates.sh

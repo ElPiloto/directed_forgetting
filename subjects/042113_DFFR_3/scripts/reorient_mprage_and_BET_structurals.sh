@@ -1,0 +1,1 @@
+../../../prototype/link/scripts/reorient_mprage_and_BET_structurals.sh

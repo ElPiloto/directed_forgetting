@@ -1,3 +1,8 @@
 *~
 *swp
 *.mat
+# don't want to publicly show our subjects data!!!
+subjects/*/data/*
+subjects/*/analysis/*level/*
+# don't want to include any vim session files
+*.vim

@@ -1,0 +1,1 @@
+../../prototype/link/register_all_image_groups.sh

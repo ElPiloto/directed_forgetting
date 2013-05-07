@@ -1,0 +1,1 @@
+../../../prototype/link/scripts/make-masks.sh

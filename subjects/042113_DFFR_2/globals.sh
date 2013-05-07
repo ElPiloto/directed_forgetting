@@ -1,0 +1,1 @@
+../../prototype/link/globals.sh
