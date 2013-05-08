@@ -12,6 +12,7 @@ PATH=$PATH:/exanet/ntb/packages/php-5.3.2/sapi/cli  # this is for rondo until ph
 PROJECT_DIR=$(pwd)
 SUBJECTS_DIR=subjects
 GROUP_DIR=group
+DATA_DIR=/jukebox/norman/lpiloto/workspace/MATLAB/DF/data
 
 #below variables are needed for roi.sh
 ROI_RESULTS_DIR=results
