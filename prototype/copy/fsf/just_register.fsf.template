@@ -40,7 +40,8 @@ set fmri(outputdir) <?= $OUTPUT_DIR ?>
 set fmri(tr) 2.0
 
 # Total volumes
-set fmri(npts) 2267
+# set fmri(npts) 2267
+set fmri(npts) <?= $NUM_VOLUMES ?>
 
 # Delete volumes
 set fmri(ndelete) 0

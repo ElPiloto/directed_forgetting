@@ -19,9 +19,7 @@ function render_firstlevel {
   data_file_prefix=$4
   initial_highres_file=$5
   highres_file=$6
-  ev_dir1=$7
-  ev_dir2=$8
-  ev_dir=$9
+  number_volumes=$7
 
   subject_dir=$(pwd)
 
@@ -33,6 +31,7 @@ function render_firstlevel {
     | sed "s:<?= \$DATA_FILE_PREFIX ?>:$subject_dir/$data_file_prefix:g" \
     | sed "s:<?= \$INITIAL_HIGHRES_FILE ?>:$subject_dir/$initial_highres_file:g" \
     | sed "s:<?= \$HIGHRES_FILE ?>:$subject_dir/$highres_file:g" \
+    | sed "s:<?= \$NUM_VOLUMES ?>:$number_volumes:g" \
 
 }
 
@@ -40,12 +39,17 @@ function render_firstlevel {
 img_names=("ALL_RUNS" "IMG_LOCALIZERS" "WORD_LOCALIZERS" "WORDLISTS")
 for img in ${img_names[@]}
 do
+	# this gives us an automatic way of grabbing the number of volumes in an image and setting the 
+	# correct value in our .fsf file, otherwise we get an error a pre-stats  part of feat
+	num_TRs=`fslinfo $NIFTI_DIR/${img}_mc | grep '^dim4.*[0-9]*$' | sed 's/dim4\s*\([0-9]\)/\1/g'`
 	render_firstlevel $FSF_DIR/just_register.fsf.template \
 		$FIRSTLEVEL_DIR/$img.feat \
 		$FSL_DIR/data/standard/MNI152_T1_2mm_brain \
 		$NIFTI_DIR/${img}_mc \
 		$NIFTI_DIR/flash_brain \
 		$NIFTI_DIR/structural_brain \
+		${num_TRs} \
 		> $FSF_DIR/$img.fsf
+	# echo "Number of volumes in ${img}_mc is ${num_TRs}"
 	echo "Rendered images: ${img}"
 done
