@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/retrieve-data-from-dicom.sh

@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/transform-coords-dest.sh

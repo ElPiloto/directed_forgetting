@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/extract-stat-at-coords.sh

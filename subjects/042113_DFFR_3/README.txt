@@ -1,1 +1,0 @@
-../../prototype/link/README.txt

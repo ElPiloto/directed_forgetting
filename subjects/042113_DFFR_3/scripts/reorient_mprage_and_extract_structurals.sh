@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/reorient_mprage_and_extract_structurals.sh

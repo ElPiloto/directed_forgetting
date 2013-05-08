@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/pick-rois-interactive.sh

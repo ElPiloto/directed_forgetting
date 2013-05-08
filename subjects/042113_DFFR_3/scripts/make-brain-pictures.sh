@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/make-brain-pictures.sh

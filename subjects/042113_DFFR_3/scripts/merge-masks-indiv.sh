@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/merge-masks-indiv.sh

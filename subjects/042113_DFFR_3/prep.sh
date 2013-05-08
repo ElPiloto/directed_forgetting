@@ -1,1 +1,0 @@
-../../prototype/link/prep.sh

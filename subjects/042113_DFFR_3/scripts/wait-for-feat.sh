@@ -1,1 +1,0 @@
-../../../prototype/link/scripts/wait-for-feat.sh

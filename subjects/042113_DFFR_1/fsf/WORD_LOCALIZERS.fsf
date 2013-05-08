@@ -40,7 +40,8 @@ set fmri(outputdir) /mnt/cd/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe
 set fmri(tr) 2.0
 
 # Total volumes
-set fmri(npts) 2267
+# set fmri(npts) 2267
+set fmri(npts) 160
 
 # Delete volumes
 set fmri(ndelete) 0
