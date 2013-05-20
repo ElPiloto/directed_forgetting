@@ -21,6 +21,7 @@ global BLOCK3; BLOCK3 = 4;
 global STATE; STATE = BEGIN_EXP;
 
 global SUBJECT; SUBJECT ='';
+global TR_LENGTH_MSECS; TR_LENGTH_MSECS = 2000;
 
 % the global variable below tells us that we've reached the end of BLOCK1 - there is no clean cut transition between the BLOCKS unfortunately
 % because the current session file has the following:
@@ -185,6 +186,8 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 	global SUBJECT; global MAX_LISTBLOCKS_IN_BLOCK1;
 	global REGRESSOR_COLUMNS_PER_PHASE_BLOCK1;
 	last_recall_cue = -1;
+	% this will be used to fill in missing TRs
+	last_TR_time = NaN;
 
 	list_idx = 0;
 	listblock_idx = 0;
@@ -282,6 +285,8 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 				list1.forget_cue = parts{3};
 				continue;
 			case{'PULSE_RECEIVED' 'PULSE_INFERRED'}
+				% more accurate time
+				event_time = 1000*str2double(parts{3});
 				switch PHASE
 					% waiting to start list: skip past pulse inferred values, til our first pulse received, mark the start time for that, add an entry for that and all subsequent pulse_received
 					% events in our run array, filling in 0's for all regressors and stay in this phase until we hit a START_LIST event
@@ -291,36 +296,48 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 								first_true_pulse = true;
 								run.first_pulse_time_for_scan = event_time;
 							end
-							run.num_TRs = run.num_TRs + 1;
-							run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST1);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+							run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+							last_TR_time = event_time;
+							run.regressors(:,end+1:end+num_TRs_to_add + 1) = repmat(REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST1),1, 1 + num_TRs_to_add);
 						end
 						continue;
 					% list 1 mode: if we receive a pulse_received now, this means we have TR for list1 and that the next line should be a word presentation
 					% so we'll add a run with the appropriate regressor value, add the current word, and stay in this phase until we reach a END_LIST command
 					case LIST1
-						run.num_TRs = run.num_TRs + 1;
-						run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST1);
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+						last_TR_time = event_time;
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) = repmat(REGRESSOR_COLUMNS_PER_PHASE(:,LIST1),1, 1 + num_TRs_to_add);
 						list1.words{end+1} = get_next_presented_word(opened_fid);
 						list1.times(end+1) = event_time;
 						continue;
 					case WAITING_START_LIST2
-						run.num_TRs = run.num_TRs + 1;
-						run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST2);
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+						last_TR_time = event_time;
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST2), 1, 1 + num_TRs_to_add);
 						continue;
 					% list 2 mode: identical to list 1 mode since we're not parsing 
 					case LIST2
-						run.num_TRs = run.num_TRs + 1;
-						run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST2);
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+						last_TR_time = event_time;
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,LIST2), 1, 1 + num_TRs_to_add);
 						list2.words{end+1} = get_next_presented_word(opened_fid);
 						list2.times(end+1) = event_time;
 						continue;
 					case WAITING_START_RECALL
-						run.num_TRs = run.num_TRs + 1;
-						run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_RECALL);
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+						last_TR_time = event_time;
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_RECALL), 1, 1 + num_TRs_to_add);
 						continue;
                     case RECALL
-                        run.num_TRs = run.num_TRs + 1;
-                        run.regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,RECALL);
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
+						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
+						last_TR_time = event_time;
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,RECALL), 1, 1 + num_TRs_to_add);
                         recall(1).times(end+1) = event_time;
 				end % PHASE switch
 				continue; % for event_type switch
@@ -390,6 +407,8 @@ end
 function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 	global SUBJECT; global MAX_LISTBLOCKS_IN_BLOCK1;
 	global REGRESSOR_COLUMNS_PER_PHASE_BLOCK2;
+	% this will be used to fill in missing TRs
+	last_TR_time = NaN;
 	% we need a run_counter because this function handles multiple runs
 	run_counter = 0;
 	list_idx = 0;
@@ -480,6 +499,7 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 				run_counter = run_counter + 1;
 				runs(run_counter).num_TRs = 0;
                 runs(run_counter).num_TRs_delete = 0;
+				last_TR_time = NaN;
 				continue;
 			case{'START_LIST'}
 				PHASE = PHASE + 1;
@@ -525,6 +545,7 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 				continue;
 
 			case {'PULSE_RECEIVED' 'PULSE_INFERRED'}
+				event_time = 1000*str2double(parts{3});
 				switch PHASE
 					% waiting to start list: skip past pulse inferred values, til our first pulse received, mark the start time for that, add an entry for that and all subsequent pulse_received
 					% events in our runs array, filling in 0's for all regressors and stay in this phase until we hit a START_LIST event
@@ -534,20 +555,35 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 								first_true_pulse = true;
 								runs(run_counter).first_pulse_time_for_scan = event_time;
 							end
-							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1);
-							runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST1);
+							% runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1);
+							% runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST1);
+
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST1), 1, 1 + num_TRs_to_add);
+
+
 						end
 						continue;
 					case LIST1
-						runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-						runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST1);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,LIST1), 1, 1 + num_TRs_to_add);
+						%runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+						%runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST1);
 						list1.words{end+1} = get_next_presented_word(opened_fid);
 						list1.times(end+1) = event_time;
 
 						continue;
                     case RECALL1
-                        runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-                        runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,RECALL1);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,RECALL1), 1, 1 + num_TRs_to_add);
+                        % runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+                        % runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,RECALL1);
                         recall1(1).times(end+1) = event_time;
 						continue;
 					case WAITING_START_LIST2
@@ -556,20 +592,32 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 								first_true_pulse = true;
 								runs(run_counter).first_pulse_time_for_scan = event_time;
 							end
-							runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-							runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST2);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST2), 1, 1 + num_TRs_to_add);
+							% runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+							% runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_LIST2);
 						end
 						continue;
 					case LIST2
-						runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-						runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST2);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,LIST2), 1, 1 + num_TRs_to_add);
+						% runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+						% runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,LIST2);
 						list2.words{end+1} = get_next_presented_word(opened_fid);
 						list2.times(end+1) = event_time;
 
 						continue;
                     case RECALL2
-                        runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-                        runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,RECALL2);
+                        % runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+                        % runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,RECALL2);
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,RECALL2), 1, 1 + num_TRs_to_add);
                         recall2(1).times(end+1) = event_time;
 						continue;
 					% this case is particularly ugly because we need to absorb all of the PULSE_RECEIVED events until we get 
@@ -585,7 +633,8 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 							runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
 							runs(run_counter).regressors(:,end+1) = REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_IMG_LOCALIZER);
 
-							[num_TRs_consumed regressor_value_first_word] = handle_start_img_localizer(opened_fid);
+							% this function takes care of
+							[num_TRs_consumed regressor_value_first_word last_TR_time] = handle_start_img_localizer(opened_fid, runs(run_counter).first_pulse_time_for_scan);
 
 							% add in the TRs consumed, we subtract one because the last TR is an image presentation TR that needs a different regressor
 							runs(run_counter).regressors(:,end+1:end+num_TRs_consumed - 1) = repmat(REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_IMG_LOCALIZER),1,num_TRs_consumed - 1);
@@ -598,10 +647,15 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 						end
 						continue;
 					case IMG_LOCALIZER
-						runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+						%runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
+							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+							last_TR_time = event_time;
+							% TODO: Deal with  possibility of PRES_IMG being off from last_TR_TIME
 						% grab next event which should be a PRES_IMG and extract the correct regressor type based on the img filename 
 						[event_type,event_time,parts] = get_next_event(opened_fid);
-						runs(run_counter).regressors(:,end+1) = get_regressor_for_pres_img(parts{3});
+						runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 + num_TRs_to_add);
+						%runs(run_counter).regressors(:,end+1) = get_regressor_for_pres_img(parts{3});
 						continue;
 
 				end
@@ -621,13 +675,20 @@ end
 % this function will return the total number of TRs that have been processed
 % the regressor values for however many number of TRs have been consumed
 % the first picture read in
-function [ num_TRs_consumed regressor_column_for_first_img_TR ] = handle_start_img_localizer(opened_fid)
+function [ num_TRs_consumed regressor_column_for_first_img_TR event_time ] = handle_start_img_localizer(opened_fid,last_TR_time)
 	num_TRs_consumed = 0;
 	[event_type,event_time,parts] = get_next_event(opened_fid);
 	while(strcmpi(event_type,'PULSE_RECEIVED'))
-		num_TRs_consumed = num_TRs_consumed + 1;
+		% here we accoutn for any skipped TRs
+		num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,0);
+		num_TRs_consumed = num_TRs_consumed + 1 + num_TRs_to_add;
+		last_TR_time = event_time;
 		[event_type,event_time,parts] = get_next_event(opened_fid);
 	end
+
+	% here we accoutn for any skipped TRs
+	num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,0);
+	num_TRs_consumed = num_TRs_consumed + num_TRs_to_add;
 
 	% this means we finally have loaded an event_type that ISN'T a PULSE RECEIVED, which SHOULD
 	% indicate that we've reached a PRES_IMG event - if this isn't the case, we're going to throw an error
@@ -672,7 +733,30 @@ end
 
 
 %%%%%%%%%% Utility functions for reading in line from file or searching for thigns, etc
-% this function throws an error if we don't find a PRES_WORD
+
+
+% this function will accept two times for a TR (the 
+function [num_TRs_to_add] = fill_in_missing_TRs(last_TR_time, current_TR_time,first_TR_time)
+	global TR_LENGTH_MSECS;
+
+	if isnan(last_TR_time)
+		num_TRs_to_add = 0;
+		return;
+	end
+
+	%tr_time_diff = current_TR_time - last_TR_time;
+	tr_time_diff = (current_TR_time - first_TR_time) - (last_TR_time - first_TR_time)
+	%
+	% here we check if the time between TRs is greater than the twice the TR_LENGTH_MSECS which would indicate we skipped at least one TR
+	% NOTE: we do 1.95 (instead of 2) to give us a little leeway. however, to counteract this, we end up having to round up to the nearest whole second
+	% which is what dividing by 1000, doing the ceiling, and then multiplying by 1000 accomplishes
+	if tr_time_diff >= (1.95 * TR_LENGTH_MSECS)
+		num_TRs_to_add = floor(ceil(tr_time_diff / 1000) * 1000 / TR_LENGTH_MSECS) - 1;
+		disp(['Adding ' num2str(num_TRs_to_add) ' because TR diff = ' num2str(tr_time_diff)]);
+	else
+		num_TRs_to_add = 0;
+	end
+end
 
 % format is %d_%d.wav, first blank = listblock idx (1-indexed), list idx
 % (0-indexed)
@@ -682,6 +766,7 @@ function [listblock_idx, list_idx] = parse_record_filename(filename)
     list_idx = results{2};
 end
 
+% this function throws an error if we don't find a PRES_WORD
 function [ word ] = get_next_presented_word(opened_fid)
 	[event_type,event_time,parts] = get_next_event(opened_fid);
 	if ~strcmpi(event_type, 'PRES_WORD')
