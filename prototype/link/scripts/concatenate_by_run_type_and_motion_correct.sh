@@ -5,6 +5,7 @@ cd $SUBJECT_DIR/$NIFTI_DIR/
 #################################################### CONCATENATE WORDLIST FILES, IMAGE LOCALIZER, and WORD LOCALIZER 
 
 if [ ! -f ALL_RUNS.nii.gz ]; then
+#if [ true ] ; then
 	echo '====> CONCATENATION INTO FOUR GROUPS ALL_RUNS, WORDLISTS, IMG_LOCALIZERS, WORD_LOCALIZERS...' $(date +%H:%M:%S)
 
 	# dynamically grab all of our WORDLIST files
@@ -16,33 +17,38 @@ if [ ! -f ALL_RUNS.nii.gz ]; then
 	for run in $wordlist_files
 	do
 		wordlist_string="${wordlist_string} $run"
+		#fslinfo $run | grep '^dim4.*$'
 	done
 
 	for run in "$word_localizer_files"
 	do
 		word_localizer_string="${word_localizer_string} $run"
+		#fslinfo $run | grep '^dim4.*$'
 	done
 
 	for run in $image_localizer_files
 	do
 		image_localizer_string="${image_localizer_string} $run"
+		#fslinfo $run | grep '^dim4.*$'
 	done
 
 
 	echo 'Runs combined as follows:'
 	echo 'WORDLISTS RUNS'
-	echo $wordlist_string
+	echo "$wordlist_string"
 	echo '---------------------------------------------'
 	echo 'WORD LOCALIZER RUNS'
-	echo $word_localizer_string 
+	echo "$word_localizer_string "
 	echo '---------------------------------------------'
 	echo 'IMAGE LOCALIZER RUNS'
-	echo $image_localizer_string
+	echo "$image_localizer_string"
 
 	fslmerge -a WORDLISTS $wordlist_string 
 	fslmerge -a WORD_LOCALIZERS $word_localizer_string 
 	fslmerge -a IMG_LOCALIZERS $image_localizer_string 
 	fslmerge -a ALL_RUNS $wordlist_string $word_localizer_string $image_localizer_string
+	# echo "#########################################################################"
+	# echo "$wordlist_string $word_localizer_string $image_localizer_string"
 fi
  
 
