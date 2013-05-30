@@ -40,3 +40,5 @@ FLASH_FILENAME_REGEX='^[0-9].*-1-1flash75x75x3.nii.gz'
 WORDLIST_FILENAME_REGEX='^[0-9].*-1-1epilistblock1953x3x32s.nii.gz'
 IMAGE_LOCALIZER_FILENAME_REGEX='^[0-9].*-1-1epiimagelocalizer1953x3x32s.nii.gz'
 WORD_LOCALIZER_FILENAME_REGEX='^[0-9].*-1-1epiwordlocalizer1953x3x32s.nii.gz'
+# adding path to temporal occipital mask
+MASKDIR=/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/data

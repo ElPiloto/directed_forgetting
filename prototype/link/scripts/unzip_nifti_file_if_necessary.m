@@ -12,7 +12,7 @@ if ~exist(nifti_file,'file')
 
 		unix(['gunzip ' gzipped_file ]);
 
-		if ~isempty(path_to_niftiti)
+		if ~isempty(path_to_nifti)
 		unix(['cd ' current_dir]);
 		end
 	else

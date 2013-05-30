@@ -88,6 +88,8 @@ global REGRESSOR_COLUMNS_PER_IMG_TYPE; REGRESSOR_COLUMNS_PER_IMG_TYPE = [0 0 0 0
 % NOTE: we include the slashes before and after otherwise "scenes" could match both scenes and scrambled_scenes
 global IMG_IDENTIFIERS; IMG_IDENTIFIERS = {'/scenes/' '/objects/' '/scrambled_scenes/'};
 
+global NUM_IMG_PRESENTATIONS_PER_BLOCK; NUM_IMG_PRESENTATIONS_PER_BLOCK = 8;
+
 % actually start programming now that we have more comments than an internet thread on kitten pictures
 while true
 	[event_type, event_time, parts] = get_next_event(fid);
@@ -407,12 +409,17 @@ end
 function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 	global SUBJECT; global MAX_LISTBLOCKS_IN_BLOCK1;
 	global REGRESSOR_COLUMNS_PER_PHASE_BLOCK2;
+	global NUM_IMG_PRESENTATIONS_PER_BLOCK;
 	% this will be used to fill in missing TRs
 	last_TR_time = NaN;
 	% we need a run_counter because this function handles multiple runs
 	run_counter = 0;
 	list_idx = 0;
 	listblock_idx = MAX_LISTBLOCKS_IN_BLOCK1;
+	% this is used to keep track of which img presentation we're on within a block.
+	% this is ultimately used to determine when we should place zeros in our regressors
+	% matrix for the interblock intervals
+	img_presentation_counter = 0;
 
     % initialize our list structures
 	% could vectorize this code, but i think this way gives
@@ -644,17 +651,32 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 							runs(run_counter).num_TRs_delete = runs(run_counter).num_TRs - 1;
 							% finally increase the phase to IMG_LOCALIZER
 							PHASE = PHASE + 1;
+							% this keeps track of how many image presentations we've seen from this category
+							img_presentation_counter = img_presentation_counter + 1;
 						end
 						continue;
 					case IMG_LOCALIZER
+						img_presentation_counter = img_presentation_counter + 1;
+						ith_img_presentation_in_block = mod(img_presentation_counter,NUM_IMG_PRESENTATIONS_PER_BLOCK);
 						%runs(run_counter).num_TRs = runs(run_counter).num_TRs + 1;
-							num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
-							runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
-							last_TR_time = event_time;
-							% TODO: Deal with  possibility of PRES_IMG being off from last_TR_TIME
+						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,runs(run_counter).first_pulse_time_for_scan);
+						runs(run_counter).num_TRs = (runs(run_counter).num_TRs + 1 + num_TRs_to_add);
+						last_TR_time = event_time;
+						% TODO: Deal with  possibility of PRES_IMG being off from last_TR_TIME
 						% grab next event which should be a PRES_IMG and extract the correct regressor type based on the img filename 
 						[event_type,event_time,parts] = get_next_event(opened_fid);
-						runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 + num_TRs_to_add);
+						% this is the case where we have extra TRs to add because we've switched from one block to another,
+						% and thus the appropriate thing to do is to fill in the missing TRs with zeros for the blocks between these;
+						% TODO: Safest way of doing this would actually check if we've decreased our ith_img_presentation since last time, that way we 
+						% can account for something like 6th_scrambled = last TR seen, then get next TR indicating 6 TRs have passed...the first two being
+						% the 7th and 8th scrambled TRs, the next 3 being inter-block , and the last being the first of the next block
+						if ith_img_presentation_in_block == 1 && num_TRs_to_add > 0
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add) =repmat(REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_IMG_LOCALIZER), 1,  num_TRs_to_add);
+							runs(run_counter).regressors(:,end+1) =get_regressor_for_pres_img(parts{3});
+						else
+							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 + num_TRs_to_add);
+							img_presentation_counter = img_presentation_counter + num_TRs_to_add;
+						end
 						%runs(run_counter).regressors(:,end+1) = get_regressor_for_pres_img(parts{3});
 						continue;
 
