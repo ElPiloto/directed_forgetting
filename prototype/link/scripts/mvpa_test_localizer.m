@@ -76,10 +76,12 @@ runs = runs(IMG_LOCALIZER_RUN_NUMBER);
 
 % initialize our regressors
 subj = init_object(subj,'regressors','conds');
-subj = set_mat(subj,'regressors','conds',get_img_localizer_regressors_and_concatenate(runs));
+subj = set_mat(subj,'regressors','conds',get_img_localizer_regressors_and_concatenate(runs),IMG_LOCALIZER_IDCS);
 
 % initialize our run selector
-[runs_selector, localizer_only_selector] = make_runs_selector(runs);
+% the 1 value below is due to a switch we made to load in the IMG_LOCALIZERS runs only (as opposed to having the img localizer run be part of a single 
+% file with multiple runs in it...therefore we pass in 1 because we only have 1 run in the file we load.
+[runs_selector, localizer_only_selector] = make_runs_selector(runs,1);
 subj = init_object(subj,'selector','runs')
 subj = set_mat(subj,'selector','runs',runs_selector);
 

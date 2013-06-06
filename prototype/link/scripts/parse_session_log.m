@@ -2,7 +2,7 @@ function [runs] = parse_session_log(varargin)
 	%TODO: ADD SPECIFICATION / PLACE FOR SUBJECT
 %specify session log file here, will do this more intelligently when there gets to be some structure behind this analysis pipeline
 %session_log_file = '../example_code_data/session.log'
-defaults.session_log_file  = '../example_code_data/session_042113_DFFR_2.log'
+defaults.session_log_file  = '../example_code_data/session_042113_DFFR_2.log';
 options = parsepropval(defaults, varargin{:});
 
 % this function assumes our localizer sequence of interest is directly preceded by a line in the following format:
@@ -22,6 +22,8 @@ global STATE; STATE = BEGIN_EXP;
 
 global SUBJECT; SUBJECT ='';
 global TR_LENGTH_MSECS; TR_LENGTH_MSECS = 2000;
+
+global DEBUG_FLAG; DEBUG_FLAG = false;
 
 % the global variable below tells us that we've reached the end of BLOCK1 - there is no clean cut transition between the BLOCKS unfortunately
 % because the current session file has the following:
@@ -339,7 +341,12 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
 						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
 						last_TR_time = event_time;
-						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,RECALL), 1, 1 + num_TRs_to_add);
+						if last_recall_cue == -1
+							run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_RECALL), 1, 1 + num_TRs_to_add);
+						else
+							run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_recall_list1(list1.forget_cue,last_recall_cue), 1, 1 + num_TRs_to_add);
+						end
+						%run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,RECALL), 1, 1 + num_TRs_to_add);
                         recall(1).times(end+1) = event_time;
 				end % PHASE switch
 				continue; % for event_type switch
@@ -358,6 +365,7 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
                 PHASE = PHASE + 1;
                 [recall(1).listblock recall(1).list_idx] = parse_record_filename(parts{3});
 				recall(1).list_file = parts{3};
+				last_recall_cue = -1;
                 continue;
 		end % end event_type switch
 
@@ -373,7 +381,7 @@ function [regressor_value] = get_regressor_for_recall_list1(forget_cue, recall_l
 	% 4 = block1, recall list2 REMEMBER_CUE
 	% 5 = block1, recall list2 FORGET_CUE
 	global REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1;
-	received_forget_cue = ~isempty(strfind(forget_cue,'forget'))
+	received_forget_cue = ~isempty(strfind(lower(forget_cue),'forget'));
 	if ~received_forget_cue
 		if recall_list_cue == 0 % recall cue 0 means recall listid=0 means recall list1
 			regressor_value = REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1(:,1);
@@ -383,7 +391,7 @@ function [regressor_value] = get_regressor_for_recall_list1(forget_cue, recall_l
 			return;
 		end
 	else
-		if recall_list_cue == 0
+		if recall_list_cue == 1
 			regressor_value = REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1(:,3);
 			return;
 		end
@@ -760,6 +768,7 @@ end
 % this function will accept two times for a TR (the 
 function [num_TRs_to_add] = fill_in_missing_TRs(last_TR_time, current_TR_time,first_TR_time)
 	global TR_LENGTH_MSECS;
+	global DEBUG_FLAG;
 
 	if isnan(last_TR_time)
 		num_TRs_to_add = 0;
@@ -767,14 +776,16 @@ function [num_TRs_to_add] = fill_in_missing_TRs(last_TR_time, current_TR_time,fi
 	end
 
 	%tr_time_diff = current_TR_time - last_TR_time;
-	tr_time_diff = (current_TR_time - first_TR_time) - (last_TR_time - first_TR_time)
+	tr_time_diff = (current_TR_time - first_TR_time) - (last_TR_time - first_TR_time);
 	%
 	% here we check if the time between TRs is greater than the twice the TR_LENGTH_MSECS which would indicate we skipped at least one TR
 	% NOTE: we do 1.95 (instead of 2) to give us a little leeway. however, to counteract this, we end up having to round up to the nearest whole second
 	% which is what dividing by 1000, doing the ceiling, and then multiplying by 1000 accomplishes
 	if tr_time_diff >= (1.95 * TR_LENGTH_MSECS)
 		num_TRs_to_add = floor(ceil(tr_time_diff / 1000) * 1000 / TR_LENGTH_MSECS) - 1;
-		disp(['Adding ' num2str(num_TRs_to_add) ' because TR diff = ' num2str(tr_time_diff)]);
+		if DEBUG_FLAG
+			disp(['Adding ' num2str(num_TRs_to_add) ' because TR diff = ' num2str(tr_time_diff)]);
+		end
 	else
 		num_TRs_to_add = 0;
 	end
