@@ -23,7 +23,7 @@
 % mvpa_test_localizer(Example inputs)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subj_id = '042113_DFFR_0';
+subj_id = '042113_DFFR_2';
 neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
 IMG_LOCALIZER_RUN_NUMBER = 15;
 varargin = {};
