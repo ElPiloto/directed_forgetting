@@ -702,7 +702,7 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 							runs(run_counter).regressors(:,end+1) =get_regressor_for_pres_img(parts{3});
 						else
 							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 + num_TRs_to_add);
-							img_presentation_counter = img_presentation_counter + num_TRs_to_add;
+							% img_presentation_counter = img_presentation_counter + num_TRs_to_add;
 						end
 						%runs(run_counter).regressors(:,end+1) = get_regressor_for_pres_img(parts{3});
 						continue;

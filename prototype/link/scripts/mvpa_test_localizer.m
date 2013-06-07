@@ -23,7 +23,7 @@
 % mvpa_test_localizer(Example inputs)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subj_id = '042013_DFFR_0';
+subj_id = '042113_DFFR_0';
 neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
 IMG_LOCALIZER_RUN_NUMBER = 15;
 varargin = {};
@@ -48,7 +48,8 @@ global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 % MASK_NAME = 'WHOLE_BRAIN';
 % MASK_NIFTI_FILENAME = 'mask.nii';
 % MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
-FEATURE_SELECT_PVAL_THRESH = 0.001;
+%FEATURE_SELECT_PVAL_THRESH = 0.001;
+FEATURE_SELECT_PVAL_THRESH = 0.00005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
 MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
 MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
@@ -76,7 +77,7 @@ runs = runs(IMG_LOCALIZER_RUN_NUMBER);
 
 % initialize our regressors
 subj = init_object(subj,'regressors','conds');
-subj = set_mat(subj,'regressors','conds',get_img_localizer_regressors_and_concatenate(runs),IMG_LOCALIZER_IDCS);
+subj = set_mat(subj,'regressors','conds',get_img_localizer_regressors_and_concatenate(runs,IMG_LOCALIZER_IDCS));
 
 % initialize our run selector
 % the 1 value below is due to a switch we made to load in the IMG_LOCALIZERS runs only (as opposed to having the img localizer run be part of a single 
