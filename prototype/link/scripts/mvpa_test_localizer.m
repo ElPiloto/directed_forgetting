@@ -44,7 +44,7 @@ options = parsepropval(defaults,varargin{:});
 
 % here we hard-code some values which should be self-explanatory. it is quite likely
 % that we will want to change some of these values into parameters
-global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [10 11 12];
+global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 % MASK_NAME = 'WHOLE_BRAIN';
 % MASK_NIFTI_FILENAME = 'mask.nii';
 % MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);

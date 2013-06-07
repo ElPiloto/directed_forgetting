@@ -48,7 +48,11 @@ options = parsepropval(defaults,varargin{:});
 % MASK_NIFTI_FILENAME = 'mask.nii';
 % MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
 %FEATURE_SELECT_PVAL_THRESH = 0.001;
-FEATURE_SELECT_PVAL_THRESH = 0.0005;
+%FEATURE_SELECT_PVAL_THRESH = 0.0005; ~ 3500
+%FEATURE_SELECT_PVAL_THRESH = 0.0000005; ~ 2700
+%FEATURE_SELECT_PVAL_THRESH = 0.0000000005; ~ 900
+%FEATURE_SELECT_PVAL_THRESH = 0.000000000005; ~ 367 voxels
+FEATURE_SELECT_PVAL_THRESH = 0.000000000005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
 MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
 MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
@@ -56,14 +60,16 @@ EPI_NAME = 'EPI';
 EPI_NIFTI_FILENAME = 'filtered_func_data.nii';
 EPI_NIFTI_FILE = fullfile(options.feat_dir,EPI_NIFTI_FILENAME);
 NUM_TRS_SHIFT = 2;
+NUM_BLOCK1_TRS = 12; % this is the number of list pair presentations we have
 
 % the next few lines refer to what rows in our regressor matrix correspond to which conditions
-global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [10 11 12];
+global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 global PRESENT_LIST1_IDX; PRESENT_LIST1_IDX = [1];
-global PRESENT_LIST2_IDX; PRESENT_LIST2_IDX = [2];
-global RECALL_LIST1_IDX; RECALL_LIST1_IDX = [3];
-global RECALL_LIST2_REMEMBER_LIST1_IDX; RECALL_LIST2_REMEMBER_LIST1_IDX = [4];
-global RECALL_LIST2_FORGET_LIST1_IDX; RECALL_LIST2_FORGET_LIST1_IDX = [5];
+global PRESENT_LIST2_IDX_FORGET_LIST1; PRESENT_LIST2_IDX_FORGET_LIST1 = [2];
+global PRESENT_LIST2_IDX_REMEMBER_LIST1; PRESENT_LIST2_IDX_REMEMBER_LIST1 = [3];
+global RECALL_LIST1_IDX; RECALL_LIST1_IDX = [4];
+global RECALL_LIST2_REMEMBER_LIST1_IDX; RECALL_LIST2_REMEMBER_LIST1_IDX = [5];
+global RECALL_LIST2_FORGET_LIST1_IDX; RECALL_LIST2_FORGET_LIST1_IDX = [6];
 
 
 % init subject
@@ -144,8 +150,8 @@ subj = move_pattern_to_hd(subj,EPI_NAME);
 % finally, we actually do cross-validation
 [subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs',[EPI_NAME '_z_thresh' num2str(FEATURE_SELECT_PVAL_THRESH)],options.class_args);
 
-% TODO: Add code to actually search through runs for TRs of interest
-% add regressor containing all regressors
+% here we create a regressor, shift it, then select the time points of interest on a run-by-run basis
+% add regressor containing all regressors (as opposed to truncated regressors that only had image localizer)
 all_regressors = [runs.regressors];
 subj = initset_object(subj,'regressors','all_regressors',all_regressors);
 % now shift our regressors
@@ -155,6 +161,62 @@ subj = shift_regressors(subj,'all_regressors','runs', NUM_TRS_SHIFT,'new_regsnam
 % grab list 2 - forget list 1
 shifted_all_regressors = get_mat(subj,'regressors',shifted_all_regressors_name);
 trs_of_interest = find(shifted_all_regressors(RECALL_LIST2_FORGET_LIST1_IDX,:));
+
+% plot run by run
+figure; hold all;
+
+for run = 1 : NUM_BLOCK1_TRS
+	run_TRs = find(runs_selector == run);
+	forget_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_FORGET_LIST1,:)),run_TRs);
+	remember_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_REMEMBER_LIST1,:)),run_TRs);
+    
+    forget_classifier_values = [results.iterations.acts(1,forget_trs)];
+    remember_classifier_values = [results.iterations.acts(1,remember_trs)];
+    if ~isempty(forget_classifier_values)
+        subplot(2,1,1);
+        hold all;
+        plot(forget_classifier_values);
+        disp(['Forget:' num2str(mean(forget_classifier_values))]);
+    end
+    if ~isempty(remember_classifier_values)
+        subplot(2,1,2); hold all;
+        plot(remember_classifier_values);
+        disp(['Remember:' num2str(mean(remember_classifier_values))]);
+    end
+
+end
+
+DEBUG_LIST1 = true;
+% print out a plot, run-by-run
+if DEBUG_LIST1
+    %figure; hold all;
+    for run = 1 : NUM_BLOCK1_TRS
+	run_TRs = find(runs_selector == run);
+	list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+    
+    list1_classifier_values = [results.iterations.acts(1,list1_trs)];
+
+    plot(list1_classifier_values);
+    pause(1.5)
+    end
+end
+
+DEBUG_ENTIRE_LIST = true;
+% print out a plot, run-by-run
+if DEBUG_ENTIRE_LIST
+    %figure; hold all;
+    for run = 1 : NUM_BLOCK1_TRS
+	run_TRs = find(runs_selector == run);
+	%list_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+    list_trs = run_TRs;
+    
+    list_classifier_values = [results.iterations.acts(1,list_trs)];
+
+    plot(list_classifier_values);
+    pause(1.5)
+    end
+end
+
 
 %end
 

@@ -37,52 +37,56 @@ global MAX_LISTBLOCKS_IN_BLOCK1;MAX_LISTBLOCKS_IN_BLOCK1 = 13;
 % correspondonce of row to regressor value is specified here to explain code:
 % regressor rows correspond to: list 1, list2, and recall TRs respectively
 % 1 = block1, present list1
-% 2 = block1, present list2
-% 3 = block1, recall list1 REMEMBER_CUE
-% 4 = block1, recall list2 REMEMBER_CUE
-% 5 = block1, recall list2 FORGET_CUE
-% 6 = block2, present list1
-% 7 = block2, recall list1
-% 8 = block2, present list2
-% 9 = block2, recall list2
-% 10 = block3, present scene img
-% 11 = block3, present objects img
-% 12 = block3, present scambled_scene img
+% 2 = block1, present list2, REMEMBER_CUE
+% 3 = block1, present list2, FORGET_CUE
+% 4 = block1, recall list1 REMEMBER_CUE
+% 5 = block1, recall list2 REMEMBER_CUE
+% 6 = block1, recall list2 FORGET_CUE
+% 7 = block2, present list1
+% 8 = block2, recall list1
+% 9 = block2, present list2
+% 10 = block2, recall list2
+% 11 = block3, present scene img
+% 12 = block3, present objects img
+% 13 = block3, present scambled_scene img
 
 % for each block where we collect scan information BLOCK1 and BLOCK2 we specify a regressor column for the partitcular phase in that particular block
 % for example, BLOCK1 starts with WAITING_START_LIST1 and so the first columns of the REGRESSOR_COLUMNS_PER_PHASE_BLOCK1 has all zeros because
 % we're not in a scan condition, but when we move to the LIST1 phase which is the next PHASE (and therefore the next column) we have the first row set to 1
 % to indicate, as commented above, that we are in the block1, present list1 scan
 global REGRESSOR_COLUMNS_PER_PHASE_BLOCK1; REGRESSOR_COLUMNS_PER_PHASE_BLOCK1 = ...
-[ 0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_LIST1
-1 0 0 0 0 0 0 0 0 0 0 0; ... % phase = LIST1
-0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_LIST2
-0 1 0 0 0 0 0 0 0 0 0 0; ... % phase = LIST2
-0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_RECALL
-0 0 1 0 0 0 0 0 0 0 0 0; ... % phase = RECALL - although in actuality this will get deferred to the values specified by REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1
-0 0 0 0 0 0 0 0 0 0 0 0]'; % phase = FINISHED - i don't think this even gets used, but i should double-check
+[ 0 0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_LIST1
+1 0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = LIST1
+0 0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_LIST2
+0 1 0 0 0 0 0 0 0 0 0 0 0; ... % phase = LIST2 - although in actuality this will get deferred to the values specified by REGRESSOR_COLUMNS_LIST2_BLOCK1
+% 0 0 1 0 0 0 0 0 0 0 0 0 0; ... % phase = LIST2
+0 0 0 0 0 0 0 0 0 0 0 0 0; ... % phase = WAITING_START_RECALL
+0 0 0 1 0 0 0 0 0 0 0 0 0; ... % phase = RECALL - although in actuality this will get deferred to the values specified by REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1
+0 0 0 0 0 0 0 0 0 0 0 0 0]'; % phase = FINISHED - i don't think this even gets used, but i should double-check
 
 
 global REGRESSOR_COLUMNS_PER_PHASE_BLOCK2; REGRESSOR_COLUMNS_PER_PHASE_BLOCK2 = ...
-[ 0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_LIST1
-0 0 0 0 0 1 0 0 0 0 0 0 ; ... % phase = LIST1
-0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_RECALL1
-0 0 0 0 0 0 1 0 0 0 0 0 ; ... % phase = RECALL1
-0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_LIST2
-0 0 0 0 0 0 0 1 0 0 0 0 ; ... % phase = LIST2
-0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_RECALL2
-0 0 0 0 0 0 0 0 1 0 0 0 ; ... % phase = RECALL2
-0 0 0 0 0 0 0 0 0 0 0 0 ;... % phase = WAITING_START_IMG_LOCALIZER
-0 0 0 0 0 0 0 0 0 1 0 0]'; ... % phase = IMG_LOCALIZER - although in actuality this will get deferred to the values specified by REGRESSOR_COLUMNS_PER_IMG_TYPE
+[ 0 0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_LIST1
+0 0 0 0 0 0 1 0 0 0 0 0 0 ; ... % phase = LIST1
+0 0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_RECALL1
+0 0 0 0 0 0 0 1 0 0 0 0 0 ; ... % phase = RECALL1
+0 0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_LIST2
+0 0 0 0 0 0 0 0 1 0 0 0 0 ; ... % phase = LIST2
+0 0 0 0 0 0 0 0 0 0 0 0 0 ; ... % phase = WAITING_START_RECALL2
+0 0 0 0 0 0 0 0 0 1 0 0 0 ; ... % phase = RECALL2
+0 0 0 0 0 0 0 0 0 0 0 0 0 ;... % phase = WAITING_START_IMG_LOCALIZER
+0 0 0 0 0 0 0 0 0 0 1 0 0]'; ... % phase = IMG_LOCALIZER - although in actuality this will get deferred to the values specified by REGRESSOR_COLUMNS_PER_IMG_TYPE
 
-% NOTE: FOR BLOCK1, PHASE = RECALL and BLOCK2, PHASE = IMG_LOCALIZER, we have cannot easily map phase to regressor value, bc there are other factors
+% NOTE: FOR BLOCK1, PHASE = RECALL(or PHASE = LIST2) and BLOCK2, PHASE = IMG_LOCALIZER, we have cannot easily map phase to regressor value, bc there are other factors
 % that determine the regressor value (configuration of FORGET_CUE and RECALL_CUE for the former and PRES_IMG type in the latter) so here we define
 % some constants to use later for these custom phase-regressor mappings
+% this will be used in BLOCK1, PHASE = LIST2 - the first row should correspond to forget list1, remember list1
+global REGRESSOR_COLUMNS_LIST2_BLOCK1; REGRESSOR_COLUMNS_LIST2_BLOCK1 = [ 0 1 0 0 0 0 0 0 0 0 0 0 0; 0 0 1 0 0 0 0 0 0 0 0 0 0]';
 % this will be used in BLOCK1, PHASE = RECALL
-global REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1; REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1 = [ 0 0 1 0 0 0 0 0 0 0 0 0; 0 0 0 1 0 0 0 0 0 0 0 0;  0 0 0 0 1 0 0 0 0 0 0 0]';
+global REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1; REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1 = [ 0 0 0 1 0 0 0 0 0 0 0 0 0; 0 0 0 0 1 0 0 0 0 0 0 0 0;  0 0 0 0 0 1 0 0 0 0 0 0 0]';
 % this will be used in BLOCK2, PHASE = IMG_LOCALIZER
 % this should match the order of IMG_IDENTIFIERS below AND it should have the same number of columns as the other REGRESSOR_COLUMNS variables
-global REGRESSOR_COLUMNS_PER_IMG_TYPE; REGRESSOR_COLUMNS_PER_IMG_TYPE = [0 0 0 0 0 0 0 0 0 1 0 0; 0 0 0 0 0 0 0 0 0 0 1 0; 0 0 0 0 0 0 0 0 0 0 0 1]';
+global REGRESSOR_COLUMNS_PER_IMG_TYPE; REGRESSOR_COLUMNS_PER_IMG_TYPE = [0 0 0 0 0 0 0 0 0 0 1 0 0; 0 0 0 0 0 0 0 0 0 0 0 1 0; 0 0 0 0 0 0 0 0 0 0 0 0 1]';
 % NOTE: IF YOU EVER CHANGE ANYTHING HERE, MAKE SURE YOU *THOROUGHLY* UPDATE THE COMMENTS HERE
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -226,7 +230,7 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 	run.num_TRs_delete = 0;
 	run.num_TRs = 0;
 	% regressor rows correspond to list 1, list2, and recall TRs respectively
-	run.regressors = zeros(12,0);
+	run.regressors = zeros(13,0);
 
 	% PHASES = 1 = waiting to start list, 2 = list1, 3 = waiting to start list2, 4 = list2, 5 = waiting to start recall, 6 = recall
 	WAITING_START_LIST1 = 1;
@@ -327,7 +331,8 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 						num_TRs_to_add = fill_in_missing_TRs(last_TR_time,event_time,run.first_pulse_time_for_scan);
 						run.num_TRs = run.num_TRs + 1 + num_TRs_to_add;
 						last_TR_time = event_time;
-						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,LIST2), 1, 1 + num_TRs_to_add);
+						%run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,LIST2), 1, 1 + num_TRs_to_add);
+						run.regressors(:,end+1:end+num_TRs_to_add + 1) =repmat( get_regressor_for_present_list2(list1.forget_cue), 1, 1 + num_TRs_to_add);
 						list2.words{end+1} = get_next_presented_word(opened_fid);
 						list2.times(end+1) = event_time;
 						continue;
@@ -375,11 +380,25 @@ function [ run, lists] = handle_listblock_for_block1(opened_fid)
 
 end
 
+function [regressor_value] = get_regressor_for_present_list2(forget_cue)
+	% works under these assumptions which are reiterated from above
+	% 3 = block1, present list2, FORGET_CUE
+	% 4 = block1, present list2, REMEMBER_CUE
+	% and that the values in REGRESSOR_COLUMNS_LIST2_BLOCK1 are (forget, remember)
+	global REGRESSOR_COLUMNS_LIST2_BLOCK1;
+	received_forget_cue = ~isempty(strfind(lower(forget_cue),'forget'));
+	if received_forget_cue
+		regressor_value = REGRESSOR_COLUMNS_LIST2_BLOCK1(:,1);
+	else
+		regressor_value = REGRESSOR_COLUMNS_LIST2_BLOCK1(:,2);
+	end
+end
+
 function [regressor_value] = get_regressor_for_recall_list1(forget_cue, recall_list_cue)
 	% works under these assumptions which are reiterated from above
-	% 3 = block1, recall list1 REMEMBER_CUE
-	% 4 = block1, recall list2 REMEMBER_CUE
-	% 5 = block1, recall list2 FORGET_CUE
+	% 4 = block1, recall list1 REMEMBER_CUE
+	% 5 = block1, recall list2 REMEMBER_CUE
+	% 6 = block1, recall list2 FORGET_CUE
 	global REGRESSOR_COLUMNS_RECALL_CUE_BLOCK1;
 	received_forget_cue = ~isempty(strfind(lower(forget_cue),'forget'));
 	if ~received_forget_cue
@@ -466,7 +485,7 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 
 	% regressor rows correspond to list1, recall1, list2, recall2, scenes, objects, scrambled scenes
 	% TRs respectively
-	runs = repmat(struct('first_pulse_time_for_scan',NaN,'num_TRs_delete',0,'num_TRs',0,'regressors',zeros(12,0)),1,0);
+	runs = repmat(struct('first_pulse_time_for_scan',NaN,'num_TRs_delete',0,'num_TRs',0,'regressors',zeros(13,0)),1,0);
 
 	% PHASES = 1 = waiting to start list, 2 = list1, 3 = waiting to start list2, 4 = list2, 5 = waiting to start recall, 6 = recall
 	WAITING_START_LIST1 = 1;
