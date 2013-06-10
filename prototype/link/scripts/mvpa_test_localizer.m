@@ -23,7 +23,7 @@
 % mvpa_test_localizer(Example inputs)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subj_id = '042113_DFFR_1';
+subj_id = '042113_DFFR_2';
 neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
 IMG_LOCALIZER_RUN_NUMBER = 15;
 varargin = {};
@@ -51,7 +51,8 @@ global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 %FEATURE_SELECT_PVAL_THRESH = 0.001;
 FEATURE_SELECT_PVAL_THRESH = 0.00005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
-MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
+%MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
+MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed_brain_extracted.nii';
 MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
 EPI_NAME = 'EPI';
 EPI_NIFTI_FILENAME = 'filtered_func_data.nii';
