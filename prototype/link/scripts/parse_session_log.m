@@ -701,9 +701,9 @@ function [runs, lists] = handle_listblocks_for_block2(opened_fid)
 							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add) =repmat(REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_IMG_LOCALIZER), 1,  num_TRs_to_add);
 							runs(run_counter).regressors(:,end+1) =get_regressor_for_pres_img(parts{3});
 						else
-							% here we add one tr for the image, and a blank tr for all the in-between TRs
-							runs(run_counter).regressors(:,end+1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 );
+							% here we add  a blank tr for all the in-between TRs and one tr for the image
 							runs(run_counter).regressors(:,end+1:end+num_TRs_to_add) =repmat( REGRESSOR_COLUMNS_PER_PHASE(:,WAITING_START_IMG_LOCALIZER), 1,  num_TRs_to_add);
+							runs(run_counter).regressors(:,end+1) =repmat( get_regressor_for_pres_img(parts{3}), 1, 1 );
 							% img_presentation_counter = img_presentation_counter + num_TRs_to_add;
 						end
 						%runs(run_counter).regressors(:,end+1) = get_regressor_for_pres_img(parts{3});
