@@ -18,14 +18,15 @@ do
 	# compute the transform
 	flirt -in $FSLDIR/data/standard/MNI152_T1_2mm_brain.nii.gz -ref mean_func.nii.gz -omat MNI2mm2func.transform
 
+	# this code ensures we only have the unzipped version of the original temporal mask - otherwise the fslmaths command will break
+	if [ -f temporal_occipital_mask_transformed.nii -a -f temporal_occipital_mask_transformed.nii.gz ]; then
+		echo "removing temporal_occipital_mask_transformed.nii"
+		rm -f temporal_occipital_mask_transformed.nii
+	fi
+
 	# apply the transform to the mask
 	flirt -in ${MASKDIR}/temporal_occipital_mask.nii.gz -ref mean_func.nii.gz -applyxfm -init MNI2mm2func.transform -out temporal_occipital_mask_transformed
 
-	# this code ensures we only have the unzipped version of the original temporal mask - otherwise the fslmaths command will break
-	if [ -f temporal_occipital_mask_transformed.nii -a -f temporal_occipital_mask_transformed.nii.gz ]; then
-		echo "removing temporal_occipital_mask_transformed.nii.gz"
-		rm -f temporal_occipital_mask_transformed.nii.gz
-	fi
 
 	# threshold the mask at 0.5
 	fslmaths temporal_occipital_mask_transformed -thr 0.5 temporal_occipital_mask_transformed
@@ -45,6 +46,12 @@ do
 
 	# check your mask
 	#fslview&
+
+	# this code ensures we only have the unzipped version of the original temporal mask - otherwise the fslmaths command will break
+	if [ -f temporal_occipital_mask_transformed.nii -a -f temporal_occipital_mask_transformed.nii.gz ]; then
+		echo "removing temporal_occipital_mask_transformed.nii"
+		rm -f temporal_occipital_mask_transformed.nii
+	fi
 
 	cd ${old_dir}
 done

@@ -49,7 +49,7 @@ global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 % MASK_NIFTI_FILENAME = 'mask.nii';
 % MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
 %FEATURE_SELECT_PVAL_THRESH = 0.001;
-FEATURE_SELECT_PVAL_THRESH = 0.00005;
+FEATURE_SELECT_PVAL_THRESH = 0.0005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
 %MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
 MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed_brain_extracted.nii';
@@ -126,7 +126,7 @@ subj = create_xvalid_indices(subj,'bootleg_runs','actives_selname','ignore_ITI_b
 %subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'runs_xval')
 subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'bootleg_runs_xval','thresh',FEATURE_SELECT_PVAL_THRESH);
 
-summarize(subj);
+summarize(subj,'display_groups',true);
 
 subj = move_pattern_to_hd(subj,EPI_NAME);
 
