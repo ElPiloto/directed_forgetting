@@ -11,3 +11,5 @@ mvpa_add_paths;
 addpath(genpath('/usr/pni/pkg/SPM8'));
 
 addpath /jukebox/norman/lpiloto/workspace/MATLAB/toolboxes/matlab_file_exchange/
+addpath /jukebox/norman/lpiloto/workspace/MATLAB/experimeta/utils/
+addpath /jukebox/norman/lpiloto/workspace/MATLAB/experimeta/

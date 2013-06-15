@@ -1,5 +1,5 @@
 %function [  ] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, data_dir, nifti_dir, feat_output_dir, session_log_file, varargin )
-%function [ subj results] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, varargin )
+function [ subj results] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, varargin )
 % [  ] = MVPA_TEST_LOCALIZER(subj_id, save_dir, varargin)
 % Purpose
 % 
@@ -23,10 +23,10 @@
 % mvpa_test_localizer(Example inputs)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subj_id = '042113_DFFR_2';
-neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
+%subj_id = '042113_DFFR_2';
+%neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
 IMG_LOCALIZER_RUN_NUMBER = 15;
-varargin = {};
+%varargin = {};
 
 
 defaults.exp_name = 'directed_forgetting';
@@ -39,6 +39,8 @@ defaults.output_dir = fullfile(neuropipe_subj_dir,'data','mvpa_results');
 defaults.class_args.train_funct_name = 'train_logreg';
 defaults.class_args.test_funct_name = 'test_logreg';
 defaults.class_args.penalty = 1;
+defaults.feature_select_thresh = 0.0005;
+defaults.mask_filename = 'temporal_occipital_mask_transformed_brain_extracted.nii';
 
 options = parsepropval(defaults,varargin{:});
 
@@ -46,14 +48,13 @@ options = parsepropval(defaults,varargin{:});
 % that we will want to change some of these values into parameters
 global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
 % MASK_NAME = 'WHOLE_BRAIN';
-% MASK_NIFTI_FILENAME = 'mask.nii';
-% MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
+% options.mask_filename = 'mask.nii';
+% MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);
 %FEATURE_SELECT_PVAL_THRESH = 0.001;
-FEATURE_SELECT_PVAL_THRESH = 0.0005;
+%FEATURE_SELECT_PVAL_THRESH = 0.0005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
-%MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
-MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed_brain_extracted.nii';
-MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
+%options.mask_filename = 'temporal_occipital_mask_transformed.nii';
+MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);
 EPI_NAME = 'EPI';
 EPI_NIFTI_FILENAME = 'filtered_func_data.nii';
 EPI_NIFTI_FILE = fullfile(options.feat_dir,EPI_NIFTI_FILENAME);
@@ -124,19 +125,19 @@ subj = create_xvalid_indices(subj,'bootleg_runs','actives_selname','ignore_ITI_b
 % TODO: find out if this change is appropriate - using shifted regressors instead of initial regressors
 % subj = feature_select(subj,[EPI_NAME '_z'],'conds','runs_xval')
 %subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'runs_xval')
-subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'bootleg_runs_xval','thresh',FEATURE_SELECT_PVAL_THRESH);
+subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'bootleg_runs_xval','thresh',options.feature_select_thresh);
 
 summarize(subj,'display_groups',true);
 
-subj = move_pattern_to_hd(subj,EPI_NAME);
+%subj = move_pattern_to_hd(subj,EPI_NAME);
 
 % classification
 %[subj results] = cross_validation(subj,[EPI_NAME '_z'],'conds','runs_xval',[EPI_NAME '_z_thresh0.05'],options.class_args);
 % finally, we actually do cross-validation
-[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'bootleg_runs_xval',[EPI_NAME '_z_thresh' num2str(FEATURE_SELECT_PVAL_THRESH)],options.class_args);
+[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'bootleg_runs_xval',[EPI_NAME '_z_thresh' num2str(options.feature_select_thresh)],options.class_args);
 
 %TODO: We eventually want to automatically save our results
  
-%end
+end
 
 

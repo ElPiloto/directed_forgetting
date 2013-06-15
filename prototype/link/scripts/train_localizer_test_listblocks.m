@@ -1,5 +1,5 @@
 %function [  ] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, data_dir, nifti_dir, feat_output_dir, session_log_file, varargin )
-%function [ subj results] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, varargin )
+function [ results, forget_trs_means, remember_trs_means, list1_trs_means, list2_trs_means,all_forget_trs,all_remember_trs,all_list1_trs] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, plots_save_dir, varargin )
 % [  ] = MVPA_TEST_LOCALIZER(subj_id, save_dir, varargin)
 % Purpose
 % 
@@ -23,10 +23,10 @@
 % mvpa_test_localizer(Example inputs)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subj_id = '042113_DFFR_2';
-neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
+%subj_id = '042113_DFFR_2';
+%neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
 IMG_LOCALIZER_RUN_NUMBER = 15;
-varargin = {};
+%varargin = {};
 
 
 defaults.exp_name = 'directed_forgetting';
@@ -39,23 +39,27 @@ defaults.output_dir = fullfile(neuropipe_subj_dir,'data','mvpa_results');
 defaults.class_args.train_funct_name = 'train_logreg';
 defaults.class_args.test_funct_name = 'test_logreg';
 defaults.class_args.penalty = 1;
+defaults.mask_filename = 'temporal_occipital_mask_transformed_brain_extracted.nii';
+defaults.feature_select_thresh = 0.0005;
 
 options = parsepropval(defaults,varargin{:});
 
+% TODO: generate outputs for lists, 
+% 
 % here we hard-code some values which should be self-explanatory. IT IS QUITE LIKELY
 % THAT WE WILL WANT TO CHANGE SOME OF THESE VALUES INTO PARAMETERS
 % MASK_NAME = 'WHOLE_BRAIN';
-% MASK_NIFTI_FILENAME = 'mask.nii';
-% MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
-%FEATURE_SELECT_PVAL_THRESH = 0.001;
-%FEATURE_SELECT_PVAL_THRESH = 0.0005; ~ 3500
-%FEATURE_SELECT_PVAL_THRESH = 0.0000005; ~ 2700
-%FEATURE_SELECT_PVAL_THRESH = 0.0000000005; ~ 900
-%FEATURE_SELECT_PVAL_THRESH = 0.000000000005; ~ 367 voxels
-FEATURE_SELECT_PVAL_THRESH = 0.000000000005;
+% options.mask_filename = 'mask.nii';
+% MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);
+%options.feature_select_thresh = 0.001;
+%options.feature_select_thresh = 0.0005; ~ 3500
+%options.feature_select_thresh = 0.0000005; ~ 2700
+%options.feature_select_thresh = 0.0000000005; ~ 900
+%options.feature_select_thresh = 0.000000000005; ~ 367 voxels
+%options.feature_select_thresh = 0.000000000005;
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
-MASK_NIFTI_FILENAME = 'temporal_occipital_mask_transformed.nii';
-MASK_NIFTI_FILE = fullfile(options.feat_dir,MASK_NIFTI_FILENAME);
+options.mask_filename = 'temporal_occipital_mask_transformed.nii';
+MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);
 EPI_NAME = 'EPI';
 EPI_NIFTI_FILENAME = 'filtered_func_data.nii';
 EPI_NIFTI_FILE = fullfile(options.feat_dir,EPI_NIFTI_FILENAME);
@@ -140,15 +144,15 @@ subj = zscore_runs(subj,EPI_NAME,'runs');
 % we can get rid of our initial pattern now
 
 % feature selection
-subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs','thresh',FEATURE_SELECT_PVAL_THRESH);
+subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs','thresh',options.feature_select_thresh);
 
-summarize(subj);
+summarize(subj,'display_groups',true);
 
-subj = move_pattern_to_hd(subj,EPI_NAME);
+%subj = move_pattern_to_hd(subj,EPI_NAME);
 
 % classification
 % finally, we actually do cross-validation
-[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs',[EPI_NAME '_z_thresh' num2str(FEATURE_SELECT_PVAL_THRESH)],options.class_args);
+[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs',[EPI_NAME '_z_thresh' num2str(options.feature_select_thresh)],options.class_args);
 
 % here we create a regressor, shift it, then select the time points of interest on a run-by-run basis
 % add regressor containing all regressors (as opposed to truncated regressors that only had image localizer)
@@ -163,59 +167,125 @@ shifted_all_regressors = get_mat(subj,'regressors',shifted_all_regressors_name);
 trs_of_interest = find(shifted_all_regressors(RECALL_LIST2_FORGET_LIST1_IDX,:));
 
 % plot run by run
-figure; hold all;
+figure('Visible','Off'); hold all;
 
+set(gcf, 'Position', get(0,'Screensize'));
+
+all_list1_trs = cell(0,1);
+all_forget_trs = cell(0,1);
+all_remember_trs = cell(0,1);
+
+forget_trs_means = [];
+remember_trs_means = [];
+list1_trs_means = [];
+list2_trs_means = [];
 for run = 1 : NUM_BLOCK1_TRS
 	run_TRs = find(runs_selector == run);
 	forget_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_FORGET_LIST1,:)),run_TRs);
 	remember_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_REMEMBER_LIST1,:)),run_TRs);
-    
+	list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+
     forget_classifier_values = [results.iterations.acts(1,forget_trs)];
     remember_classifier_values = [results.iterations.acts(1,remember_trs)];
-    if ~isempty(forget_classifier_values)
-        subplot(2,1,1);
-        hold all;
-        plot(forget_classifier_values);
-        disp(['Forget:' num2str(mean(forget_classifier_values))]);
-    end
-    if ~isempty(remember_classifier_values)
-        subplot(2,1,2); hold all;
-        plot(remember_classifier_values);
-        disp(['Remember:' num2str(mean(remember_classifier_values))]);
-    end
-
-end
-
-DEBUG_LIST1 = true;
-% print out a plot, run-by-run
-if DEBUG_LIST1
-    %figure; hold all;
-    for run = 1 : NUM_BLOCK1_TRS
-	run_TRs = find(runs_selector == run);
-	list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
-    
     list1_classifier_values = [results.iterations.acts(1,list1_trs)];
-
-    plot(list1_classifier_values);
-    pause(1.5)
+    if ~isempty(list1_classifier_values)
+        subplot(3,1,1);
+        hold all;
+        plot(list1_classifier_values,'-o','LineWidth',2);
+        title(['List 1:' num2str(mean(list1_classifier_values))]);
+        disp(['List 1:' num2str(mean(list1_classifier_values))]);
+		list1_trs_means(end+1) = mean(list1_classifier_values);
+		all_list1_trs{ end+1 } = list1_classifier_values;
     end
+
+	if ~isempty(forget_classifier_values)
+        subplot(3,1,2);
+        hold all;
+        plot(forget_classifier_values,'-o','LineWidth',2);
+        title(['Forget:' num2str(mean(forget_classifier_values))]);
+        disp(['Forget:' num2str(mean(forget_classifier_values))]);
+		forget_trs_means(end+1) = mean(forget_classifier_values);
+		list2_trs_means(end+1) = mean(forget_classifier_values);
+		all_forget_trs{end+1} = forget_classifier_values;
+    end
+
+    if ~isempty(remember_classifier_values)
+        subplot(3,1,3); hold all;
+        plot(remember_classifier_values,'-o','LineWidth',2);
+        title(['Remember:' num2str(mean(remember_classifier_values))]);
+        disp(['Remember:' num2str(mean(remember_classifier_values))]);
+		remember_trs_means(end+1) = mean(remember_classifier_values);
+		list2_trs_means(end+1) = mean(remember_classifier_values);
+		all_remember_trs{end+1} = remember_classifier_values;
+    end
+
+end
+% plot means
+subplot(3,1,1);
+title(['List 1:' num2str(mean(list1_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier readout');
+
+subplot(3,1,2);
+title(['Forget:' num2str(mean(forget_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier readout');
+
+subplot(3,1,3);
+title(['Remember:' num2str(mean(remember_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier readout');
+			
+if ~exist(plots_save_dir,'dir')
+	mkdir(plots_save_dir);
 end
 
-DEBUG_ENTIRE_LIST = true;
-% print out a plot, run-by-run
-if DEBUG_ENTIRE_LIST
-    %figure; hold all;
-    for run = 1 : NUM_BLOCK1_TRS
-	run_TRs = find(runs_selector == run);
-	%list_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
-    list_trs = run_TRs;
-    
-    list_classifier_values = [results.iterations.acts(1,list_trs)];
+saveas(gcf, fullfile(plots_save_dir,'list1_vs_list2.png'), 'png');
+disp(['Saved plot at: ' fullfile(plots_save_dir,'list1_vs_list2.png')]);
+close(gcf);
 
-    plot(list_classifier_values);
-    pause(1.5)
-    end
-end
+ % DEBUG_LIST1 = true;
+ % % print out a plot, run-by-run
+ % if DEBUG_LIST1
+ % 	list1_trs_means = [];
+ % 	list2_trs_means = [];
+ %     %figure; hold all;
+ %     for run = 1 : NUM_BLOCK1_TRS
+ % 		run_TRs = find(runs_selector == run);
+ % 		list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+ % 		% we don't have a single list2 regressor (we split them up previously)
+ % 		list2_trs = union(find(shifted_all_regressors(PRESENT_LIST2_IDX_FORGET_LIST1,:)), find(shifted_all_regressors(PRESENT_LIST2_IDX_REMEMBER_LIST1,:)));
+ % 		list2_trs = intersect(list2_trs,run_TRs);
+ % 
+ % 		list1_classifier_values = [results.iterations.acts(1,list1_trs)];
+ % 		list1_trs_means(end+1) = mean(list1_classifier_values);
+ % 
+ % 		list2_classifier_values = [results.iterations.acts(1,list2_trs)];
+ % 		list2_trs_means(end+1) = mean(list2_classifier_values);
+ % 
+ % 		plot(list1_classifier_values);
+ % 		pause(1.5)
+ %     end
+ % end
+ % 
+ % DEBUG_ENTIRE_LIST = true;
+ % % print out a plot, run-by-run
+ % if DEBUG_ENTIRE_LIST
+ %     %figure; hold all;
+ %     for run = 1 : NUM_BLOCK1_TRS
+ % 	run_TRs = find(runs_selector == run);
+ % 	%list_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+ %     list_trs = run_TRs;
+ %     
+ %     list_classifier_values = [results.iterations.acts(1,list_trs)];
+ % 
+ %     plot(list_classifier_values);
+ %     pause(1.5)
+ %     end
+ % end
 
 
 %end

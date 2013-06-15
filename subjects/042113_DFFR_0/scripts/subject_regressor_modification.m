@@ -49,7 +49,14 @@ for run = 1 : length(runs)
 		% add value to regressors matrix
 		runs(run).regressors(:,end+1) = zeros(num_regressor_values,1);
 	end
-	
+
+	if run == 6 % this should correspond to 12-1-1epilistblock and we want to add a single, all-zeros TR to the regressors list
+		% increase number of TRs
+		runs(run).num_TRs = runs(run).num_TRs + 1;
+		% add value to regressors matrix
+		runs(run).regressors(:,end+1) = zeros(num_regressor_values,1);
+	end
+
 	if run == 9 % this should correspond to 16-1-1epilistblock and we want to add a single, all-zeros TR to the regressors list
 		% increase number of TRs
 		runs(run).num_TRs = runs(run).num_TRs + 1;
