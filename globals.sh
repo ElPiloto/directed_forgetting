@@ -13,6 +13,7 @@ PROJECT_DIR=$(pwd)
 SUBJECTS_DIR=subjects
 GROUP_DIR=group
 DATA_DIR=/jukebox/norman/lpiloto/workspace/MATLAB/DF/data
+FMRI_DIR="fmri data" # added by luis - currently only used by ./scaffold_subject_based_on_fmri_dir.sh
 
 #below variables are needed for roi.sh
 ROI_RESULTS_DIR=results
@@ -30,3 +31,4 @@ if [ -d $SUBJECTS_DIR ]; then
 ALL_SUBJECTS=$(ls -1d $SUBJECTS_DIR/*/ | cut -d / -f 2)
 NON_EXCLUDED_SUBJECTS=$(exclude "$ALL_SUBJECTS")
 fi
+
