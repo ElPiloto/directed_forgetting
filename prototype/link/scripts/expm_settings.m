@@ -54,6 +54,16 @@ func.params = {'subject','mask_filename','classifier_fn_name','regularization_va
 func.outputs = { 'results', 'forget_trs_means', 'remember_trs_means', 'list1_trs_means', 'list2_trs_means','all_forget_trs','all_remember_trs','all_list1_trs'};
 expmt.funcs(func.fn_name) = func;
 
+% xval_localizer_two_classes
+func = struct();
+func.fn_name = 'xval_localizer_two_classes.m';
+func.req_inputs = {};
+func.params = {'subject','mask_filename','classifier_fn_name','regularization_value','feature_select_fn_name','feature_select_thresh','img_localizer_idcs'};
+func.outputs = {'mean_cv_accuracy','results'};
+
+expmt.funcs(func.fn_name) = func;
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % parameter data
@@ -72,6 +82,7 @@ expmt.params('feature_select_fn_name') = expm_param('feature_select_fn_name','st
 expmt.in_order_params{end+1} = 'feature_select_fn_name';
 expmt.params('feature_select_thresh') = expm_param('feature_select_thresh','int','default_value',0.0001);
 expmt.in_order_params{end+1} = 'feature_select_thresh';
+expmt.params('img_localizer_idcs') = expm_param('img_localizer_idcs','key_value_pair');
+expmt.in_order_params{end+1} = 'img_localizer_idcs';
 expmt.params('subject') = expm_param('subject','string');
 expmt.in_order_params{end+1} = 'subject';
-
