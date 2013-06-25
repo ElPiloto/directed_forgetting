@@ -14,4 +14,12 @@ source globals.sh
 #bash scripts/reorient-to-las.sh $NIFTI_DIR
 bash scripts/reorient_mprage_and_BET_structurals.sh
 bash scripts/concatenate_by_run_type_and_motion_correct.sh
+# here we run a matlab script that will generate our regressor files for us 
+# so that we can use them in a Feat GLM analysis 
+cd scripts;
+pni_matlab -r "try generate_regressors_for_glm('${SUBJ}'); catch; end; quit"
+cd ..;
+
+# here we actually render our fsf templates
 bash scripts/render-fsf-templates.sh
+

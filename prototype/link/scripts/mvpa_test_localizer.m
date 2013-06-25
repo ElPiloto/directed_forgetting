@@ -25,7 +25,7 @@ function [ subj results] = mvpa_test_localizer( subj_id, neuropipe_subj_dir, var
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %subj_id = '042113_DFFR_2';
 %neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
-IMG_LOCALIZER_RUN_NUMBER = 15;
+IMG_LOCALIZER_RUN_NUMBER = get_subj_specific_img_localizer_run_idx();
 %varargin = {};
 
 
@@ -46,7 +46,9 @@ options = parsepropval(defaults,varargin{:});
 
 % here we hard-code some values which should be self-explanatory. it is quite likely
 % that we will want to change some of these values into parameters
-global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
+%global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
+% TODO: also turn this into a function so that we make it explicit that these values are used in multiple places
+global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [12 13 14];
 % MASK_NAME = 'WHOLE_BRAIN';
 % options.mask_filename = 'mask.nii';
 % MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);

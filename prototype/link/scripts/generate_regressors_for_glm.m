@@ -1,6 +1,28 @@
-subj_id = '042113_DFFR_1';
+function [  ] = generate_regressors_for_glm( subj_id )
+% [  ] = GENERATE_REGRESSORS_FOR_GLM(subj_id)
+% Purpose
+% 
+% This will write out a regressors file 
+%
+% INPUT
+%
+% Description of inputs
+%
+% OUTPUT
+% 
+% Description of outputs
+%
+% EXAMPLE USAGE:
+%
+% 
+% generate_regressors_for_glm(Example inputs)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%subj_id = '042113_DFFR_1';
 neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
-IMG_LOCALIZER_RUN_NUMBER = 15;
+IMG_LOCALIZER_RUN_NUMBER = get_subj_specific_img_localizer_run_idx;
 varargin = {};
 TR_LENGTH = 2.0;
 
@@ -17,10 +39,8 @@ options = parsepropval(defaults,varargin{:});
 
 % here we hard-code some values which should be self-explanatory. it is quite likely
 % that we will want to change some of these values into parameters
-global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
+global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [12 13 14];
 img_localizer_names = {'scenes' 'objects' 'scrambled_scenes'};
-
-
 
 % here we load run information - useful for creating our run selector and
 % our regressors 
@@ -57,4 +77,4 @@ for regressor_idx = 1 : num_regressors
 	display(['Completed writing out regressors to ' regressor_file]);
 end
 
-
+end

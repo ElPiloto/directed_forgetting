@@ -56,7 +56,7 @@ expmt.funcs(func.fn_name) = func;
 
 % xval_localizer_two_classes
 func = struct();
-func.fn_name = 'xval_localizer_two_classes.m';
+func.fn_name = 'run_xval_two_classes.m';
 func.req_inputs = {};
 func.params = {'subject','mask_filename','classifier_fn_name','regularization_value','feature_select_fn_name','feature_select_thresh','img_localizer_idcs'};
 func.outputs = {'mean_cv_accuracy','results'};

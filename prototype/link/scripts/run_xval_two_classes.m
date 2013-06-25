@@ -1,4 +1,4 @@
-function [  ] = run_cross_validation( varargin )
+function [ all_cv_accuracy_results ] = run_xval_two_classes( varargin )
 % [  ] = RUN_CROSS_VALIDATION(varargin)
 % Purpose
 % 
@@ -22,9 +22,11 @@ function [  ] = run_cross_validation( varargin )
 expm_settings;
 
 % TODO: Add function that lists subjects
-subjects = {'042013_DFFR_0' '042113_DFFR_0' '042113_DFFR_1' '042113_DFFR_2'};
-regularization_values = [ 1000 100 10 1 0.5];
-feature_selection_thresholds = [ 0.00000005 0.0000005 0.00005];
+%subjects = {'042013_DFFR_0' '042113_DFFR_0' '042113_DFFR_1' '042113_DFFR_2'};
+subjects = list_subjects();
+regularization_values = [ 10 1];
+%feature_selection_thresholds = [ 0.00000005 0.0000005 0.00005 0.0005];
+feature_selection_thresholds = [ 0.00005 0.0005 ];
 subjects_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/';
 subjects_script_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/scripts';
 
@@ -32,7 +34,7 @@ params.feat_dir = 'IMG_LOCALIZERS.feat/';
 params.mask_filename = 'temporal_occipital_mask_transformed_brain_extracted.nii';
 params.classifier_fn_name = 'train_logreg';
 params.feature_select_fn_name = 'statmap_anova';
-img_localizers = {{'scenes_versus_scrambled' [11 13] } { 'objects_versus_scrambled' [12 13] } };
+img_localizers = {{'scenes_versus_scrambled' [12 14] } { 'objects_versus_scrambled' [13 14] } { 'scenes_versus_scrambled' [12 13] }};
 
 all_cv_accuracy_results = zeros(numel(subjects),numel(feature_selection_thresholds),numel(regularization_values));
 

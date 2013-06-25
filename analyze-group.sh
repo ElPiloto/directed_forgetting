@@ -13,7 +13,7 @@ source globals.sh   # load project-wide settings
 
 # run each subject's analysis
 for subj in $ALL_SUBJECTS; do
-  bash $SUBJECTS_DIR/$subj/analyze.sh
+ nohup bash $SUBJECTS_DIR/$subj/analyze.sh &
 done
 
 # now, run group analyses

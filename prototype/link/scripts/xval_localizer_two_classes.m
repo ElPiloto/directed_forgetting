@@ -25,7 +25,7 @@ function [ subj results] = xval_localizer_two_classes( subj_id, neuropipe_subj_d
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %subj_id = '042113_DFFR_2';
 %neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
-IMG_LOCALIZER_RUN_NUMBER = 15;
+IMG_LOCALIZER_RUN_NUMBER = get_subj_specific_img_localizer_run_idx;
 %varargin = {};
 
 
@@ -42,8 +42,8 @@ defaults.class_args.penalty = 1;
 defaults.feature_select_thresh = 0.0005;
 defaults.mask_filename = 'temporal_occipital_mask_transformed_brain_extracted.nii';
 % this specifies what we're classifying between
-% 11 = scenes, 12 = objects, 13 = scrambled scenes
-defaults.img_localizer_idcs = [11 13];
+% 12 = scenes, 13 = objects, 14 = scrambled scenes
+defaults.img_localizer_idcs = [12 14];
 
 options = parsepropval(defaults,varargin{:});
 

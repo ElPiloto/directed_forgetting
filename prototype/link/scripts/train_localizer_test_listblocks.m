@@ -25,7 +25,7 @@ function [ results, forget_trs_means, remember_trs_means, list1_trs_means, list2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %subj_id = '042113_DFFR_2';
 %neuropipe_subj_dir = ['/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/' subj_id '/'];
-IMG_LOCALIZER_RUN_NUMBER = 15;
+IMG_LOCALIZER_RUN_NUMBER = get_subj_specific_img_localizer_run_idx;
 %varargin = {};
 
 
@@ -67,7 +67,7 @@ NUM_TRS_SHIFT = 2;
 NUM_BLOCK1_TRS = 12; % this is the number of list pair presentations we have
 
 % the next few lines refer to what rows in our regressor matrix correspond to which conditions
-global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [11 12 13];
+global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [12 13 14];
 global PRESENT_LIST1_IDX; PRESENT_LIST1_IDX = [1];
 global PRESENT_LIST2_IDX_FORGET_LIST1; PRESENT_LIST2_IDX_FORGET_LIST1 = [2];
 global PRESENT_LIST2_IDX_REMEMBER_LIST1; PRESENT_LIST2_IDX_REMEMBER_LIST1 = [3];
