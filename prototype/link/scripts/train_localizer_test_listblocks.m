@@ -60,11 +60,14 @@ options = parsepropval(defaults,varargin{:});
 MASK_NAME = 'TEMPORAL_OCCIPITAL';
 options.mask_filename = 'temporal_occipital_mask_transformed.nii';
 MASK_NIFTI_FILE = fullfile(options.feat_dir,options.mask_filename);
-EPI_NAME = 'EPI';
+%EPI_NAME = 'EPI';
+EPI_NAME = ['ALL_RUNS_' MASK_NAME '_MASKED'];
 EPI_NIFTI_FILENAME = 'filtered_func_data.nii';
 EPI_NIFTI_FILE = fullfile(options.feat_dir,EPI_NIFTI_FILENAME);
 NUM_TRS_SHIFT = 2;
-NUM_BLOCK1_TRS = 12; % this is the number of list pair presentations we have
+%NUM_BLOCK1_TRS = 12; % this is the number of list pair presentations we have
+NUM_BLOCK1_TRS = get_subj_specific_num_listblocks(); % this is the number of list pair presentations we have
+SUBJECT_MAT_SAVE_FILE = fullfile(options.output_dir,'subject.mat');
 
 % the next few lines refer to what rows in our regressor matrix correspond to which conditions
 global IMG_LOCALIZER_IDCS; IMG_LOCALIZER_IDCS = [12 13 14];
@@ -75,76 +78,125 @@ global RECALL_LIST1_IDX; RECALL_LIST1_IDX = [4];
 global RECALL_LIST2_REMEMBER_LIST1_IDX; RECALL_LIST2_REMEMBER_LIST1_IDX = [5];
 global RECALL_LIST2_FORGET_LIST1_IDX; RECALL_LIST2_FORGET_LIST1_IDX = [6];
 
+% the two extra tildes are to convert to logical from scalar result of exist fn
+if ~~~exist(options.output_dir,'dir')
+	mkdir(options.output_dir);
+end
 
 % init subject
-subj = init_subj(options.exp_name,subj_id);
+if exist(SUBJECT_MAT_SAVE_FILE,'file')
+	try
+		load(SUBJECT_MAT_SAVE_FILE);
+	catch
+	end
+end
+% this covers us in case the SUBJECT_MAT_SAVE_FILE gets corrupted 
+% and no longer contains the subj variable
+if ~exist('subj','var')
+	subj = init_subj(options.exp_name,subj_id);
+end
 
 % load mask
-unzip_nifti_file_if_necessary(MASK_NIFTI_FILE);
-subj = load_spm_mask(subj,MASK_NAME,MASK_NIFTI_FILE);
+if ~exist_object(subj,'mask',MASK_NAME)
+	unzip_nifti_file_if_necessary(MASK_NIFTI_FILE);
+	subj = load_spm_mask(subj,MASK_NAME,MASK_NIFTI_FILE);
+end
 
-% here we load run information - useful for creating our run selector and
-% our regressors 
-[runs] = parse_session_log('session_log_file',options.session_log_file);
-% here we make any subject specific modifications to the regressors struct we created from the session log
-runs = subject_regressor_modification(runs,subj_id);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+regressors_suffix = [num2str(IMG_LOCALIZER_IDCS(1)) '_' num2str(IMG_LOCALIZER_IDCS(2)) '_' num2str(IMG_LOCALIZER_IDCS(3))];
 
+shifted_regressors_name = ['runs_shift' num2str(NUM_TRS_SHIFT) '_all_runs_' regressors_suffix];
+if ~exist_object(subj,'regressors',shifted_regressors_name)
+	% here we load run information - useful for creating our run selector and
+	% our regressors 
+	[runs] = parse_session_log('session_log_file',options.session_log_file);
+	% here we make any subject specific modifications to the regressors struct we created from the session log
+	runs = subject_regressor_modification(runs,subj_id);
 
-% initialize our regressors
-subj = init_object(subj,'regressors','conds');
-subj = set_mat(subj,'regressors','conds',get_img_localizer_regressors_and_concatenate(runs,IMG_LOCALIZER_IDCS));
+	cond_all_runs_regressors = ['conds_all_runs_' regressors_suffix];
+	% initialize our regressors
+	subj = init_object(subj,'regressors',cond_all_runs_regressors);
+	subj = set_mat(subj,'regressors',cond_all_runs_regressors,get_img_localizer_regressors_and_concatenate(runs,IMG_LOCALIZER_IDCS));
 
-% make a selector to indicate which runs each TR belongs to as well as make a single localizer
-% that specifies which runs are for the localizer
-[runs_selector, localizer_only_selector] = make_runs_selector(runs,IMG_LOCALIZER_RUN_NUMBER);
+	% make a selector to indicate which runs each TR belongs to as well as make a single localizer
+	% that specifies which runs are for the localizer
+	[runs_selector, localizer_only_selector] = make_runs_selector(runs,IMG_LOCALIZER_RUN_NUMBER);
 
-% initialize our run selector
-subj = init_object(subj,'selector','runs')
-subj = set_mat(subj,'selector','runs',runs_selector);
+	% initialize our run selector
+	subj = init_object(subj,'selector','runs_all_runs')
+	subj = set_mat(subj,'selector','runs_all_runs',runs_selector);
 
-subj = init_object(subj,'selector','localizer_runs_only');
-subj = set_mat(subj,'selector','localizer_runs_only',localizer_only_selector);
+	subj = init_object(subj,'selector','localizer_runs_only_all_runs');
+	subj = set_mat(subj,'selector','localizer_runs_only_all_runs',localizer_only_selector);
 
-%shift our regressors
-shifted_regressors_name = ['runs_shift' num2str(NUM_TRS_SHIFT)];
-subj = shift_regressors(subj,'conds','runs', NUM_TRS_SHIFT,'new_regsname',shifted_regressors_name);
+	%shift our regressors
+	subj = shift_regressors(subj,cond_all_runs_regressors,'runs_all_runs', NUM_TRS_SHIFT,'new_regsname',shifted_regressors_name);
+end
 
-% now we make our "cross-validation" selector which requires three steps:
-% 		1. set all time points to 2 (indicating, by default each time point should be tested on)
-% 		2. set all time points belonging to the img_localizer run to 1 (indicating they should be trained on)
-% 		3. set all time points in the img_localizer run with shifted regressors values that don't correspond to 
-% 		any condition to zero (indicating we don't want to train OR test) on these values
-% Step 1.
-train_localizer_test_all_other_TRs_selector = 2 * ones(1,numel(runs_selector));
-% Step 2.
-localizer_TR_idcs = find(runs_selector == IMG_LOCALIZER_RUN_NUMBER);
-train_localizer_test_all_other_TRs_selector(localizer_TR_idcs) = 1;
-% Step 3.
-combined_regressors = sum(get_mat(subj,'regressors',shifted_regressors_name));
-combined_regressors = combined_regressors(localizer_TR_idcs);
-% this is for dealing with the fact that we're trying to find 0-values in a subset of our regressors matrix,
-% but we want to change values on a selector with a different length
-tmp_selector = train_localizer_test_all_other_TRs_selector(localizer_TR_idcs);
-zero_valued_localizer_TR_idcs = find(combined_regressors == 0);
-tmp_selector(zero_valued_localizer_TR_idcs) = 0;
-train_localizer_test_all_other_TRs_selector(localizer_TR_idcs) = tmp_selector;
-clear tmp_selector;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+selector_name = ['train_localizer_test_all_other_TRs_' regressors_suffix];
+if ~exist_group(subj,'selector',selector_name)
+	% now we make our "cross-validation" selector which requires three steps:
+	% 		1. set all time points to 2 (indicating, by default each time point should be tested on)
+	% 		2. set all time points belonging to the img_localizer run to 1 (indicating they should be trained on)
+	% 		3. set all time points in the img_localizer run with shifted regressors values that don't correspond to 
+	% 		any condition to zero (indicating we don't want to train OR test) on these values
+	% Step 1.
+	train_localizer_test_all_other_TRs_selector = 2 * ones(1,numel(runs_selector));
+	% Step 2.
+	localizer_TR_idcs = find(runs_selector == IMG_LOCALIZER_RUN_NUMBER);
+	train_localizer_test_all_other_TRs_selector(localizer_TR_idcs) = 1;
+	% Step 3.
+	combined_regressors = sum(get_mat(subj,'regressors',shifted_regressors_name));
+	combined_regressors = combined_regressors(localizer_TR_idcs);
+	% this is for dealing with the fact that we're trying to find 0-values in a subset of our regressors matrix,
+	% but we want to change values on a selector with a different length
+	tmp_selector = train_localizer_test_all_other_TRs_selector(localizer_TR_idcs);
+	zero_valued_localizer_TR_idcs = find(combined_regressors == 0);
+	tmp_selector(zero_valued_localizer_TR_idcs) = 0;
+	train_localizer_test_all_other_TRs_selector(localizer_TR_idcs) = tmp_selector;
+	clear tmp_selector;
 
-% finally, we can actually add the selector
-subj = initset_object(subj,'selector','train_localizer_test_all_other_TRs_1',train_localizer_test_all_other_TRs_selector,...
-			'group_name','train_localizer_test_all_other_TRs');
+	% finally, we can actually add the selector
+	subj = initset_object(subj,'selector',[selector_name '_1'],train_localizer_test_all_other_TRs_selector,...
+				'group_name',selector_name);
+end
 
-% load up our EPI
-unzip_nifti_file_if_necessary(EPI_NIFTI_FILE);
-subj = load_spm_pattern(subj, EPI_NAME, MASK_NAME, EPI_NIFTI_FILE);
+if ~exist_object(subj,'pattern',EPI_NAME)
+	% load up our EPI
+	unzip_nifti_file_if_necessary(EPI_NIFTI_FILE);
+	subj = load_spm_pattern(subj, EPI_NAME, MASK_NAME, EPI_NIFTI_FILE);
+end
 
-% zscore our data
-subj = zscore_runs(subj,EPI_NAME,'runs');
+if ~exist_object(subj,'pattern',[EPI_NAME '_z'])
+	% zscore our data
+	subj = zscore_runs(subj,EPI_NAME,'runs_all_runs');
+end
+
 
 % we can get rid of our initial pattern now
+thresholded_mask_feature_select_group_name = [EPI_NAME '_z_' regressors_suffix '_thresh'];
+full_thresholded_mask_feature_select_group_name = [thresholded_mask_feature_select_group_name num2str(options.feature_select_thresh)];
+threshold_pattern_feature_select_group_name = [EPI_NAME '_z_' regressors_suffix '_anova'];
 
+if ~exist_group(subj,'mask',full_thresholded_mask_feature_select_group_name)
 % feature selection
-subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs','thresh',options.feature_select_thresh);
+	if ~exist_group(subj,'pattern',threshold_pattern_feature_select_group_name)
+		subj = feature_select(subj,[EPI_NAME '_z'],shifted_regressors_name,selector_name,'thresh',options.feature_select_thresh, ...
+            'new_maskstem',thresholded_mask_feature_select_group_name, 'new_map_patname', threshold_pattern_feature_select_group_name);
+
+        pat_names = find_group(subj,'pattern',threshold_pattern_feature_select_group_name);
+        for pat_name = pat_names
+            pat_name = pat_name{:};
+            subj = move_pattern_to_hd(subj,pat_name);
+        end
+    else % this is the case where we've ALREADY created the anova patterns for each fold for this particular combination, but we want to threshold it differently
+         
+         subj = create_thresh_mask(subj,threshold_pattern_feature_select_group_name,full_thresholded_mask_feature_select_group_name,options.feature_select_thresh);
+    end
+    
+
+end
 
 summarize(subj,'display_groups',true);
 
@@ -152,15 +204,16 @@ summarize(subj,'display_groups',true);
 
 % classification
 % finally, we actually do cross-validation
-[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,'train_localizer_test_all_other_TRs',[EPI_NAME '_z_thresh' num2str(options.feature_select_thresh)],options.class_args);
+[subj results] = cross_validation(subj,[EPI_NAME '_z'],shifted_regressors_name,selector_name,full_thresholded_mask_feature_select_group_name,options.class_args);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % here we create a regressor, shift it, then select the time points of interest on a run-by-run basis
 % add regressor containing all regressors (as opposed to truncated regressors that only had image localizer)
 all_regressors = [runs.regressors];
 subj = initset_object(subj,'regressors','all_regressors',all_regressors);
 % now shift our regressors
 shifted_all_regressors_name = ['all_runs_shift' num2str(NUM_TRS_SHIFT)];
-subj = shift_regressors(subj,'all_regressors','runs', NUM_TRS_SHIFT,'new_regsname',shifted_all_regressors_name);
+subj = shift_regressors(subj,'all_regressors','runs_all_runs', NUM_TRS_SHIFT,'new_regsname',shifted_all_regressors_name);
 
 % grab list 2 - forget list 1
 shifted_all_regressors = get_mat(subj,'regressors',shifted_all_regressors_name);
@@ -246,6 +299,190 @@ end
 saveas(gcf, fullfile(plots_save_dir,'list1_vs_list2.png'), 'png');
 disp(['Saved plot at: ' fullfile(plots_save_dir,'list1_vs_list2.png')]);
 close(gcf);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% here we plot scene - object
+
+% plot run by run
+figure('Visible','Off'); hold all;
+
+set(gcf, 'Position', get(0,'Screensize'));
+
+all_list1_trs = cell(0,1);
+all_forget_trs = cell(0,1);
+all_remember_trs = cell(0,1);
+
+forget_trs_means = [];
+remember_trs_means = [];
+list1_trs_means = [];
+list2_trs_means = [];
+for run = 1 : NUM_BLOCK1_TRS
+	run_TRs = find(runs_selector == run);
+	forget_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_FORGET_LIST1,:)),run_TRs);
+	remember_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_REMEMBER_LIST1,:)),run_TRs);
+	list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+
+    forget_classifier_values = [results.iterations.acts(1,forget_trs)] - [results.iterations.acts(2,forget_trs)];
+    remember_classifier_values = [results.iterations.acts(1,remember_trs)] - [results.iterations.acts(2,remember_trs)];
+    list1_classifier_values = [results.iterations.acts(1,list1_trs)] - [results.iterations.acts(2,list1_trs)];
+    if ~isempty(list1_classifier_values)
+        subplot(3,1,1);
+        hold all;
+        plot(list1_classifier_values,'-o','LineWidth',2);
+        title(['List 1:' num2str(mean(list1_classifier_values))]);
+        disp(['List 1:' num2str(mean(list1_classifier_values))]);
+		list1_trs_means(end+1) = mean(list1_classifier_values);
+		all_list1_trs{ end+1 } = list1_classifier_values;
+    end
+
+	if ~isempty(forget_classifier_values)
+        subplot(3,1,2);
+        hold all;
+        plot(forget_classifier_values,'-o','LineWidth',2);
+        title(['Forget:' num2str(mean(forget_classifier_values))]);
+        disp(['Forget:' num2str(mean(forget_classifier_values))]);
+		forget_trs_means(end+1) = mean(forget_classifier_values);
+		list2_trs_means(end+1) = mean(forget_classifier_values);
+		all_forget_trs{end+1} = forget_classifier_values;
+    end
+
+    if ~isempty(remember_classifier_values)
+        subplot(3,1,3); hold all;
+        plot(remember_classifier_values,'-o','LineWidth',2);
+        title(['Remember:' num2str(mean(remember_classifier_values))]);
+        disp(['Remember:' num2str(mean(remember_classifier_values))]);
+		remember_trs_means(end+1) = mean(remember_classifier_values);
+		list2_trs_means(end+1) = mean(remember_classifier_values);
+		all_remember_trs{end+1} = remember_classifier_values;
+    end
+
+end
+% plot means
+subplot(3,1,1);
+title(['List 1:' num2str(mean(list1_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Objects classifier readout');
+
+subplot(3,1,2);
+title(['Forget:' num2str(mean(forget_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Objects classifier readout');
+
+subplot(3,1,3);
+title(['Remember:' num2str(mean(remember_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Objects classifier readout');
+			
+if ~exist(plots_save_dir,'dir')
+	mkdir(plots_save_dir);
+end
+
+saveas(gcf, fullfile(plots_save_dir,'list1_vs_list2_scene_minus_obj.png'), 'png');
+disp(['Saved plot at: ' fullfile(plots_save_dir,'list1_vs_list2_scene_minus_obj.png')]);
+close(gcf);
+
+%%%%%%%% here we plot scene minus scrambled
+
+% plot run by run
+figure('Visible','Off'); hold all;
+
+set(gcf, 'Position', get(0,'Screensize'));
+
+all_list1_trs = cell(0,1);
+all_forget_trs = cell(0,1);
+all_remember_trs = cell(0,1);
+
+forget_trs_means = [];
+remember_trs_means = [];
+list1_trs_means = [];
+list2_trs_means = [];
+for run = 1 : NUM_BLOCK1_TRS
+	run_TRs = find(runs_selector == run);
+	forget_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_FORGET_LIST1,:)),run_TRs);
+	remember_trs = intersect(find(shifted_all_regressors(PRESENT_LIST2_IDX_REMEMBER_LIST1,:)),run_TRs);
+	list1_trs = intersect(find(shifted_all_regressors(PRESENT_LIST1_IDX,:)),run_TRs);
+
+    forget_classifier_values = [results.iterations.acts(1,forget_trs)] - [results.iterations.acts(3,forget_trs)];
+    remember_classifier_values = [results.iterations.acts(1,remember_trs)] - [results.iterations.acts(3,remember_trs)];
+    list1_classifier_values = [results.iterations.acts(1,list1_trs)] - [results.iterations.acts(3,list1_trs)];
+    if ~isempty(list1_classifier_values)
+        subplot(3,1,1);
+        hold all;
+        plot(list1_classifier_values,'-o','LineWidth',2);
+        title(['List 1:' num2str(mean(list1_classifier_values))]);
+        disp(['List 1:' num2str(mean(list1_classifier_values))]);
+		list1_trs_means(end+1) = mean(list1_classifier_values);
+		all_list1_trs{ end+1 } = list1_classifier_values;
+    end
+
+	if ~isempty(forget_classifier_values)
+        subplot(3,1,2);
+        hold all;
+        plot(forget_classifier_values,'-o','LineWidth',2);
+        title(['Forget:' num2str(mean(forget_classifier_values))]);
+        disp(['Forget:' num2str(mean(forget_classifier_values))]);
+		forget_trs_means(end+1) = mean(forget_classifier_values);
+		list2_trs_means(end+1) = mean(forget_classifier_values);
+		all_forget_trs{end+1} = forget_classifier_values;
+    end
+
+    if ~isempty(remember_classifier_values)
+        subplot(3,1,3); hold all;
+        plot(remember_classifier_values,'-o','LineWidth',2);
+        title(['Remember:' num2str(mean(remember_classifier_values))]);
+        disp(['Remember:' num2str(mean(remember_classifier_values))]);
+		remember_trs_means(end+1) = mean(remember_classifier_values);
+		list2_trs_means(end+1) = mean(remember_classifier_values);
+		all_remember_trs{end+1} = remember_classifier_values;
+    end
+
+end
+% plot means
+subplot(3,1,1);
+title(['List 1:' num2str(mean(list1_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Scrambled Scene classifier readout');
+
+subplot(3,1,2);
+title(['Forget:' num2str(mean(forget_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Scrambled Scene classifier readout');
+
+subplot(3,1,3);
+title(['Remember:' num2str(mean(remember_trs_means))]);
+ylim([0 1]);
+xlabel('TRs');
+ylabel('Scene classifier minus Scrambled Scene classifier readout');
+			
+if ~exist(plots_save_dir,'dir')
+	mkdir(plots_save_dir);
+end
+
+saveas(gcf, fullfile(plots_save_dir,'list1_vs_list2_scene_minus_scrambled_scene.png'), 'png');
+disp(['Saved plot at: ' fullfile(plots_save_dir,'list1_vs_list2_scene_minus_scrambled_scene.png')]);
+close(gcf);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  % DEBUG_LIST1 = true;
  % % print out a plot, run-by-run

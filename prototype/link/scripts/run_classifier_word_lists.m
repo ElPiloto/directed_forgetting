@@ -24,9 +24,11 @@ expm_settings;
 % TODO: Add function that lists subjects
 %subjects = {'042013_DFFR_0' '042113_DFFR_0' '042113_DFFR_1' '042113_DFFR_2'};
 subjects = list_subjects();
+subjects = {'061213_DFFR_0' '061313_DFFR_0'  '061513_DFFR_0'  '061913_DFFR_0'};
+%subjects = {'061513_DFFR_0'};
 regularization_values = [ 10 1];
 %feature_selection_thresholds = [ 0.0000000005 0.00000005 0.00005];
-feature_selection_thresholds = [ 0.0000000005 0.00000005 0.00005 0.0005];
+feature_selection_thresholds = [ 0.00005 0.0005];
 subjects_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/';
 subjects_script_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/scripts';
 
@@ -53,7 +55,7 @@ for subject_idx = 1:numel(subjects)
 
 		for regularization_value_idx = 1 : numel(regularization_values)
 
-			try
+			%try
 			params.regularization_value = regularization_values(regularization_value_idx);
 
 			class_args.train_funct_name = params.classifier_fn_name;
@@ -69,9 +71,9 @@ for subject_idx = 1:numel(subjects)
 			   	train_localizer_test_listblocks(params.subject,subject_dir,params_specific_path,'class_args',class_args,'feature_select_thresh',params.feature_select_thresh,'feat_dir',fullfile(subject_dir,'analysis','firstlevel',params.feat_dir),'mask_filename',params.mask_filename);
 			[saved_filename] = expm_save_output(expmt,output,params);
 			display(['Completed writing output to: ' saved_filename]);
-			catch err
-				disp(['Failed for subject: ' params.subject ' because:\n\t' err.message]);
-			end
+% 			catch err
+% 				disp(['Failed for subject: ' params.subject ' because:\n\t' err.message]);
+% 			end
 		end
 	end
 

@@ -25,9 +25,9 @@ expm_settings;
 %subjects = {'042013_DFFR_0' '042113_DFFR_0' '042113_DFFR_1' '042113_DFFR_2'};
 subjects = list_subjects();
 
-regularization_values = [ 10 1];
+regularization_values = [ 1];
 %feature_selection_thresholds = [ 0.00000005 0.0000005 0.00005 0.0005];
-feature_selection_thresholds = [ 0.00005 0.0005];
+feature_selection_thresholds = [ 0.00005];
 subjects_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/';
 subjects_script_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/scripts';
 

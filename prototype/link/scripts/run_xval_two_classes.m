@@ -20,13 +20,11 @@ function [ all_cv_accuracy_results ] = run_xval_two_classes( varargin )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 expm_settings;
-
-% TODO: Add function that lists subjects
-%subjects = {'042013_DFFR_0' '042113_DFFR_0' '042113_DFFR_1' '042113_DFFR_2'};
+% TODO: Add support for starting for-loops at a specific index the first time
 subjects = list_subjects();
-regularization_values = [ 10 1];
+regularization_values = [ 1];
 %feature_selection_thresholds = [ 0.00000005 0.0000005 0.00005 0.0005];
-feature_selection_thresholds = [ 0.00005 0.0005 ];
+feature_selection_thresholds = [ 0.00005 ];
 subjects_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/';
 subjects_script_dir = '/jukebox/norman/lpiloto/workspace/MATLAB/DF/scripts/neuropipe/subjects/%s/scripts';
 
@@ -34,9 +32,9 @@ params.feat_dir = 'IMG_LOCALIZERS.feat/';
 params.mask_filename = 'temporal_occipital_mask_transformed_brain_extracted.nii';
 params.classifier_fn_name = 'train_logreg';
 params.feature_select_fn_name = 'statmap_anova';
-img_localizers = {{'scenes_versus_scrambled' [12 14] } { 'objects_versus_scrambled' [13 14] } { 'scenes_versus_scrambled' [12 13] }};
-
-all_cv_accuracy_results = zeros(numel(subjects),numel(feature_selection_thresholds),numel(regularization_values));
+%img_localizers = {{'scenes_versus_scrambled' [12 14] } { 'objects_versus_scrambled' [13 14] } { 'scenes_versus_objects' [12 13] }};
+img_localizers = {{'scenes_versus_scrambled' [12 14] } { 'objects_versus_scrambled' [13 14] } { 'scenes_versus_objects' [12 13] }};
+all_cv_accuracy_results = zeros(numel(subjects),numel(feature_selection_thresholds),numel(regularization_values),numel(img_localizers));
 
 for subject_idx = 1:numel(subjects)
 	params.subject = subjects{subject_idx};
@@ -61,7 +59,7 @@ for subject_idx = 1:numel(subjects)
 			class_args.penalty = params.regularization_value;
 
 			for img_localizers_idx = 1 : numel(img_localizers)
-				try
+				%try
 
 					params.img_localizer_idcs = img_localizers{img_localizers_idx};
 
@@ -72,14 +70,16 @@ for subject_idx = 1:numel(subjects)
 					[saved_filename] = expm_save_output(expmt,output,params);
 					display(['Completed writing output to: ' saved_filename]);
 
-					all_cv_accuracy_results(subject_idx,feature_select_thresh_idx,regularization_value_idx) = output.mean_cv_accuracy;
-				catch
-					all_cv_accuracy_results(subject_idx,feature_select_thresh_idx,regularization_value_idx) = NaN;
-				end
+					all_cv_accuracy_results(subject_idx,feature_select_thresh_idx,regularization_value_idx,img_localizers_idx) = output.mean_cv_accuracy;
+                %catch err
+				%	all_cv_accuracy_results(subject_idx,feature_select_thresh_idx,regularization_value_idx) = NaN;
+				%end
 			end
 		end
-	end
+    end
 
+    display(['Finished subject: ' params.subject]);
+	
 	% return to original directory
 	cd(old_dir);
 end
