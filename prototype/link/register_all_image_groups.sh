@@ -12,6 +12,6 @@ bash ./scripts/wait-for-feat.sh $FIRSTLEVEL_DIR/WORD_LOCALIZERS.feat
 bash ./scripts/wait-for-feat.sh $FIRSTLEVEL_DIR/IMG_LOCALIZERS.feat
 
 # register temporal occipital masks
-bash scripts/transform_temporal_occipital_mask
+bash ./scripts/transform_temporal_occipital_mask.sh
 
 # TODO: Add calls to GLM here
